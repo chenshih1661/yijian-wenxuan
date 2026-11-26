@@ -94,6 +94,9 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:44px}
 details{margin-top:16px;font-size:14px;color:var(--mute)}
 summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--ink);font-weight:700}
 details ul{margin:4px 0 0;padding-left:1.2em}
+.inapp{background:#fff1b8;color:#4a3600;padding:12px max(4vw,16px);display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;font-size:15px}
+.inapp p{margin:0;flex:1 1 260px}
+.inapp .btn{background:#4a3600;color:#fff;border-color:#4a3600;text-decoration:none}
 .fab{position:fixed;right:16px;bottom:16px;background:var(--ink);color:var(--bg);text-decoration:none;border-radius:999px;padding:12px 18px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:5}
 .fab[hidden]{display:none}
 @media(min-width:900px){.fab{display:none}}
@@ -101,6 +104,7 @@ details ul{margin:4px 0 0;padding-left:1.2em}
 </head>
 <body>
 <div class="cmyk" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+<div class="inapp" id="inapp" hidden><p id="inappMsg"></p><a class="btn" id="inappOpen" href="#">用瀏覽器開啟</a></div>
 <header class="top">
 <svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="15" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="26" cy="26" r="6.5" fill="currentColor"/><path d="M26 2v48M2 26h48" stroke="currentColor" stroke-width="2.5"/></svg>
 <div><h1>一鍵文宣</h1><p class="lede">輸入尺寸和內容，自動排好版面，下載印刷廠可以直接印的 PDF。</p></div>
@@ -123,7 +127,9 @@ details ul{margin:4px 0 0;padding-left:1.2em}
   <label class="f"><span>店名／品牌</span><input type="text" id="t-brand"></label>
   <label class="f"><span>主標題<em>按 Enter 可以換行</em></span><textarea id="t-title" rows="2"></textarea></label>
   <label class="f"><span>副標題</span><input type="text" id="t-sub"></label>
-  <label class="f"><span>醒目標語<em>例如優惠、特價</em></span><input type="text" id="t-hi"></label>
+  <label class="f"><span>醒目標語<em>例如 開幕首週限定、全館特價</em></span><input type="text" id="t-hi"></label>
+  <label class="f"><span>大字價格／折扣<em>例如 5折、$199、買一送一</em></span><input type="text" id="t-price"></label>
+  <label class="f"><span>行動呼籲<em>例如 立即預約、掃碼領券</em></span><input type="text" id="t-cta"></label>
   <label class="f"><span>內容重點<em>一行一點</em></span><textarea id="t-points" rows="4"></textarea></label>
   <label class="f"><span>活動資訊<em>時間、地點</em></span><textarea id="t-info" rows="2"></textarea></label>
   <label class="f"><span>聯絡方式<em>地址、電話、LINE</em></span><textarea id="t-contact" rows="2"></textarea></label>
@@ -149,7 +155,8 @@ details ul{margin:4px 0 0;padding-left:1.2em}
    <p class="status" id="aistat" aria-live="polite">依照「想要的感覺」推薦版型和配色。</p>
    <div class="opts" id="opts"></div>
   </div>
-  <h3>版型</h3><div class="grid" id="thumbs"></div>
+  <h3>版型・廣告促銷</h3><div class="grid tgrid" id="thumbs-ad"></div>
+  <h3>版型・簡約質感</h3><div class="grid tgrid" id="thumbs-classic"></div>
   <h3>配色</h3><div class="grid pals" id="pals"></div>
   <h3>字型</h3><div class="chips" id="fonts"></div>
  </div>
@@ -157,7 +164,7 @@ details ul{margin:4px 0 0;padding-left:1.2em}
   <h2>下載</h2>
   <ul class="warns" id="warns" aria-live="polite"></ul>
   <p class="spec" id="spec"></p>
-  <div class="dl"><button type="button" class="primary" id="pdf">下載印刷用 PDF</button><button type="button" class="ghost" id="jpg">下載確認用 JPG</button></div>
+  <div class="dl"><button type="button" class="primary" id="pdf">下載印刷用 PDF</button><button type="button" class="ghost" id="share" hidden>傳送 PDF（LINE、Email…）</button><button type="button" class="ghost" id="jpg">下載確認用 JPG</button></div>
   <p class="status" id="dlstat" aria-live="polite"></p>
   <details><summary>給印刷廠的檔案說明</summary><ul>
    <li>PDF 已含四邊出血，並設定好成品尺寸（TrimBox）與出血範圍（BleedBox）。</li>
@@ -177,6 +184,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 const CONFIG = { aiEndpoint: '' };
 
 const $ = s => document.querySelector(s);
+/* ===== LINE 等 App 內建瀏覽器不能下載檔案：LINE 自動改用手機瀏覽器開啟 ===== */
+const UA = navigator.userAgent || '', IN_LINE = /\bLine\//i.test(UA), IN_APP = IN_LINE || /FBAN|FBAV|FB_IAB|Instagram|MicroMessenger|Messenger|Threads/i.test(UA);
+const IS_TOP = (() => { try { return window.top === window; } catch (e) { return false; } })();
+const EXT_URL = (() => { try { const u = new URL(location.href); u.searchParams.set('openExternalBrowser', '1'); return u.href; } catch (e) { return location.href; } })();
+if (IN_LINE && IS_TOP && !/[?&]openExternalBrowser=1/.test(location.search)) location.replace(EXT_URL);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const PT = 72 / 25.4, MARK = 9;
 if (window.qrcode && qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs['UTF-8']) qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
@@ -189,6 +201,10 @@ const FONTS = {
 };
 // bg 底色、ink 文字、p 主色、op 主色上的字、a 強調色、oa 強調色上的字、s 淡色
 const PALETTES = {
+  sale: { n: '量販紅黃', mood: '促銷、特價、量販、熱鬧', bg: '#FFFFFF', ink: '#1A1A1A', p: '#E60012', op: '#FFFFFF', a: '#FFE100', oa: '#1A1A1A', s: '#FFF6C2' },
+  electric: { n: '電光藍', mood: '科技、3C、運動、男性', bg: '#FFFFFF', ink: '#0B1033', p: '#0047FF', op: '#FFFFFF', a: '#FFE14D', oa: '#0B1033', s: '#E3EBFF' },
+  neonpop: { n: '霓虹粉', mood: '派對、夜生活、年輕、美妝', bg: '#FFFFFF', ink: '#1B0B2E', p: '#FF2E88', op: '#FFFFFF', a: '#29F0FF', oa: '#1B0B2E', s: '#FFE3F0' },
+  citrus: { n: '活力橘', mood: '活潑、果汁、夏天、新鮮', bg: '#FFFFFF', ink: '#1F1300', p: '#FF6A00', op: '#FFFFFF', a: '#B6F23A', oa: '#1F1300', s: '#FFE8D6' },
   sunset: { n: '暖陽橘', mood: '溫暖、親切、餐飲、烘焙', bg: '#FFF8F1', ink: '#2B1A10', p: '#E35D2A', op: '#FFFFFF', a: '#1F6F6B', oa: '#FFFFFF', s: '#FBE3D3' },
   sky: { n: '晴空藍', mood: '清新、專業、科技、醫療', bg: '#FFFFFF', ink: '#14213D', p: '#1D5FBF', op: '#FFFFFF', a: '#FFC83D', oa: '#14213D', s: '#E4EEFB' },
   forest: { n: '森林綠', mood: '自然、健康、有機、植栽', bg: '#F6F4EC', ink: '#1E2A22', p: '#2E6B4E', op: '#FFFFFF', a: '#F0B93B', oa: '#1E2A22', s: '#DDE8DF' },
@@ -251,7 +267,16 @@ function balanced(text, size, wt, fk, maxW) {
 const R = (L, x, y, w, h, c, r = 0) => L.ops.push({ t: 'rect', x, y, w, h, c, r });
 const C = (L, cx, cy, r, c, a = 1) => L.ops.push({ t: 'circle', cx, cy, r, c, a });
 const ring = (L, cx, cy, r, lw, c, a = 1) => L.ops.push({ t: 'ring', cx, cy, r, lw, c, a });
-const txt = (L, s, x, y, size, w, c) => L.ops.push({ t: 'text', s, x, y, size, w, c, fk: L.font });
+const txt = (L, s, x, y, size, w, c, fx) => L.ops.push(Object.assign({ t: 'text', s, x, y, size, w, c, fk: L.font }, fx || {}));
+const poly = (L, pts, c, a = 1, sk = null, sw = 0) => L.ops.push({ t: 'poly', pts, c, a, sk, sw });
+const pline = (L, pts, lw, c) => L.ops.push({ t: 'pline', pts, lw, c });
+const push = (L, px, py, deg) => L.ops.push({ t: 'push', px, py, rot: deg * Math.PI / 180 });
+const pop = L => L.ops.push({ t: 'pop' });
+const box4 = (L, b, c, r = 0, sk = null, sw = 0) => { R(L, b.x, b.y, b.w, b.h, c, r); if (sk) L.ops.push({ t: 'stroke', x: b.x, y: b.y, w: b.w, h: b.h, r, lw: sw, c: sk }); };
+function lum(hex) { const n = parseInt(String(hex).slice(1, 7), 16), f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(n >> 16) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255); }
+function starPts(cx, cy, ro, ri, n) { const pts = []; for (let i = 0; i < n * 2; i++) { const r = i % 2 ? ri : ro, a = i * Math.PI / n - Math.PI / 2; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } return pts; }
+function rays(L, cx, cy, len, n, c, a) { for (let i = 0; i < n; i += 2) { const a1 = i * 2 * Math.PI / n, a2 = (i + 1) * 2 * Math.PI / n; poly(L, [[cx, cy], [cx + Math.cos(a1) * len, cy + Math.sin(a1) * len], [cx + Math.cos(a2) * len, cy + Math.sin(a2) * len]], c, a); } }
+function stripes(L, b, sw, c, a) { L.ops.push({ t: 'clip', x: b.x, y: b.y, w: b.w, h: b.h }); for (let k = -b.h; k < b.w; k += sw * 2) poly(L, [[b.x + k, b.y], [b.x + k + sw, b.y], [b.x + k + sw + b.h, b.y + b.h], [b.x + k + b.h, b.y + b.h]], c, a); L.ops.push({ t: 'unclip' }); }
 const hline = (L, x, y, w, lw, c) => R(L, x, y - lw / 2, w, lw, c);
 const lineW = L => clamp(L.u * 0.004, 0.25, 1.4);
 
@@ -292,16 +317,22 @@ function stack(L, box, list, o) {
     const it = r.it;
     if (it.space != null) { L.slots[it.key] = { x: box.x, y, w: box.w, h: it.space }; y += r.h + r.gap; continue; }
     const lineH = r.size * r.lh, top = (r.lh - 1) * r.size / 2;
+    const fx = it.fx ? { sk: it.fx.sk, sw: (it.fx.sw || 0) * r.size, sh: it.fx.sh, glow: it.fx.glow } : null;
     if (it.pill) {
-      const pw = Math.min(box.w, Math.max(...r.lines.map(l => l.w)) + 2 * r.px);
+      const mlw = Math.max(...r.lines.map(l => l.w)), ar = it.arrow ? r.size * 0.9 : 0;
+      const pw = Math.min(box.w, mlw + 2 * r.px + ar);
       const x0 = align === 'center' ? box.x + (box.w - pw) / 2 : align === 'right' ? box.x + box.w - pw : box.x;
-      R(L, x0, y, pw, r.h, it.pill.bg, Math.min(r.h / 2, r.size * 0.55));
-      r.lines.forEach((l, i) => txt(L, l.s, x0 + (pw - l.w) / 2, y + r.py + i * lineH + top, r.size, it.w, it.c));
+      box4(L, { x: x0, y, w: pw, h: r.h }, it.pill.bg, Math.min(r.h / 2, r.size * 0.55), it.pill.sk, Math.max(0.3, r.size * 0.08));
+      r.lines.forEach((l, i) => txt(L, l.s, x0 + r.px + (pw - 2 * r.px - ar - l.w) / 2, y + r.py + i * lineH + top, r.size, it.w, it.c, fx));
+      if (ar) { const ax = x0 + pw - r.px - r.size * 0.55, cy = y + r.h / 2; poly(L, [[ax, cy - r.size * 0.3], [ax + r.size * 0.42, cy], [ax, cy + r.size * 0.3]], it.c); }
     } else r.lines.forEach((l, i) => {
       const ly = y + i * lineH + top;
       const x = align === 'center' ? box.x + (box.w - l.w) / 2 : align === 'right' ? box.x + box.w - l.w : box.x + r.ind;
-      if (it.list && l.b) C(L, box.x + r.size * 0.38, ly + r.size * 0.5, r.size * 0.17, it.bc || it.c);
-      if (l.s) txt(L, l.s, x, ly, r.size, it.w, it.c);
+      if (it.list && l.b) {
+        if (it.bs === 'check') { const q = r.size * 0.78, bx = box.x + r.size * 0.02, by = ly + r.size * 0.12; R(L, bx, by, q, q, it.bc || it.c, q * 0.18); pline(L, [[bx + q * 0.22, by + q * 0.52], [bx + q * 0.43, by + q * 0.72], [bx + q * 0.8, by + q * 0.28]], q * 0.14, '#FFFFFF'); }
+        else C(L, box.x + r.size * 0.38, ly + r.size * 0.5, r.size * 0.17, it.bc || it.c);
+      }
+      if (l.s) txt(L, l.s, x, ly, r.size, it.w, it.c, fx);
     });
     y += r.h + r.gap;
   }
@@ -371,21 +402,272 @@ function footer(L, box, c, o) {
 function blocks(L, c, o) {
   const F = FONTS[L.font];
   return {
-    title: { text: c.title, f: 1, w: F.head, c: o.title, lh: 1.18, gap: 0.34, balance: true, min: 4 },
-    sub: { text: c.sub, f: 0.4, w: F.bold, c: o.sub, gap: 0.5 },
-    hi: { text: c.hi, f: 0.42, w: F.head, c: o.hiInk, pill: { bg: o.hiBg }, lh: 1.25, gap: 0.55 },
-    points: { text: c.points, f: 0.31, w: F.body, c: o.body, list: !o.center, bc: o.bullet, lh: 1.5, gap: 0.42 },
-    info: { text: c.info, f: 0.3, w: F.bold, c: o.body, lh: 1.5, gap: 0.3 }
+    title: { text: c.title, f: 1, w: F.head, c: o.title, lh: 1.18, gap: 0.34, balance: true, min: 4, fx: o.titleFx },
+    sub: { text: c.sub, f: 0.4, w: F.bold, c: o.sub, gap: 0.5, fx: o.subFx },
+    price: { text: c.price, f: o.priceF || 1.25, w: F.head, c: o.price || o.title, lh: 1.04, gap: 0.42, balance: true, min: 4, fx: o.priceFx },
+    hi: { text: c.hi, f: 0.42, w: F.head, c: o.hiInk, pill: { bg: o.hiBg, sk: o.hiSk }, lh: 1.25, gap: 0.55, balance: true },
+    points: { text: c.points, f: 0.31, w: F.body, c: o.body, list: !o.center, bs: o.bs, bc: o.bullet, lh: 1.5, gap: 0.42, fx: o.bodyFx },
+    info: { text: c.info, f: 0.3, w: F.bold, c: o.body, lh: 1.5, gap: 0.45, fx: o.bodyFx },
+    cta: { text: c.cta, f: 0.44, w: F.head, c: o.ctaInk || '#FFFFFF', pill: { bg: o.ctaBg || o.title, sk: o.ctaSk }, arrow: true, lh: 1.2, gap: 0.3, balance: true }
   };
+}
+
+/* ===== 廣告版型共用元件 ===== */
+// 品牌列＋頁尾（聯絡資訊、QR），回傳中間可用範圍
+function chrome(L, c, o) {
+  const { S, W, H, m, u } = L;
+  let top = S.y, bottom = S.y + S.h;
+  if (!o.noBrand) { const bt = brandTag(L, S.x, S.y, clamp(u * 0.07, 5, 28), c, { bg: o.brandBg || null, ink: o.brandInk }); if (bt) top += bt.h + m * 0.6; }
+  if (c.contact || c.qr) {
+    const fh = footH(L, c), ft = bottom - fh;
+    if (o.footBg) { const b2 = ft - m * 0.55; R(L, 0, b2, W, H - b2, o.footBg); if (o.footSk) hline(L, 0, b2, W, o.footSkW || lineW(L) * 2, o.footSk); bottom = b2 - m * 0.6; }
+    else { if (o.footLine) hline(L, S.x, ft - m * 0.45, S.w, lineW(L), o.footLine); bottom = ft - m * 0.9; }
+    footer(L, { x: S.x, y: ft, w: S.w, h: fh }, c, { ink: o.footInk });
+  }
+  return { top, bottom };
+}
+// 爆炸星或圓章，裡面放大字
+function badge(L, cx, cy, r, text, o) {
+  push(L, cx, cy, o.rot ?? -10);
+  if (o.shape === 'circle') { C(L, cx, cy, r, o.bg); if (o.sk) ring(L, cx, cy, r, r * 0.05, o.sk); ring(L, cx, cy, r * 0.84, r * 0.025, o.ink, 0.7); }
+  else poly(L, starPts(cx, cy, r, r * 0.82, o.n || 16), o.bg, 1, o.sk || null, o.sk ? r * 0.04 : 0);
+  const side = r * 1.18;
+  stack(L, { x: cx - side / 2, y: cy - side / 2, w: side, h: side }, [{ text, f: 1, w: FONTS[L.font].head, c: o.ink, lh: 1.05, balance: true, min: L.minText, fx: o.fx }], { kmax: r * 0.62, kmin: L.minText, valign: 'center', align: 'center' });
+  pop(L);
+}
+// 斜放的相片（白框＋影子）
+function tilt(L, b, c, deg, o = {}) {
+  const cx = b.x + b.w / 2, cy = b.y + b.h / 2, f = Math.min(b.w, b.h) * 0.045;
+  push(L, cx, cy, deg);
+  R(L, b.x + f * 0.6, b.y + f * 0.9, b.w, b.h, o.shadow || 'rgba(0,0,0,0.28)');
+  R(L, b.x, b.y, b.w, b.h, o.frame || '#FFFFFF');
+  photo(L, { x: b.x + f, y: b.y + f, w: b.w - 2 * f, h: b.h - 2 * f }, c);
+  if (o.sk) L.ops.push({ t: 'stroke', x: b.x, y: b.y, w: b.w, h: b.h, lw: Math.max(0.4, f * 0.4), c: o.sk });
+  pop(L);
+}
+// 照片＋價格標的展示區
+function showcase(L, b, c, text, o) {
+  const tall = b.h > b.w * 1.1;
+  if (c.photo && text) {
+    if (tall) { const r = Math.min(b.w * 0.42, b.h * 0.3); tilt(L, { x: b.x, y: b.y, w: b.w, h: b.h - r * 1.05 }, c, -3, o); badge(L, b.x + b.w - r * 0.92, b.y + b.h - r * 0.92, r, text, o.badge); }
+    else { const r = Math.min(b.h * 0.5, b.w * 0.3); tilt(L, { x: b.x, y: b.y + b.h * 0.05, w: b.w - r * 1.15, h: b.h * 0.9 }, c, -3.5, o); badge(L, b.x + b.w - r * 0.92, b.y + b.h / 2, r, text, o.badge); }
+  } else if (c.photo) tilt(L, { x: b.x + b.w * 0.04, y: b.y + b.h * 0.04, w: b.w * 0.92, h: b.h * 0.92 }, c, -2.5, o);
+  else if (text) badge(L, b.x + b.w / 2, b.y + b.h / 2, Math.min(b.h * 0.5, b.w * 0.45), text, o.badge);
+}
+// 斜貼膠帶，重複文字（超出邊緣的部分是裝飾）
+function tapeBand(L, cx, cy, len, th, deg, bg, ink, text) {
+  push(L, cx, cy, deg);
+  R(L, cx - len / 2, cy - th / 2, len, th, bg);
+  R(L, cx - len / 2, cy - th / 2 + th * 0.06, len, th * 0.05, ink);
+  R(L, cx - len / 2, cy + th / 2 - th * 0.11, len, th * 0.05, ink);
+  const F = FONTS[L.font], size = th * 0.5, unit = text.replace(/\s*\n\s*/g, ' ') + '　・　', uw = em(unit, F.head, L.font) * size;
+  if (uw > 0) for (let x = cx - len / 2 - uw * 0.3; x < cx + len / 2; x += uw) L.ops.push({ t: 'text', s: unit, x, y: cy - size / 2, size, w: F.head, c: ink, fk: L.font, deco: true });
+  pop(L);
 }
 
 /* ===== 版型：每個版型都會自動適應直式、橫式與小尺寸 ===== */
 const TEMPLATES = {
+  burst: { cat: 'ad', n: '爆炸價', d: '放射背景、爆炸星價格標、描邊大標，促銷感最強；適合特價、週年慶、開幕', draw(L, c) {
+    const { S, W, H, pal: P, m, u } = L;
+    R(L, 0, 0, W, H, P.p);
+    rays(L, W * 0.5, H * 0.45, Math.hypot(W, H), 32, P.op, 0.1);
+    const { top, bottom } = chrome(L, c, { brandBg: '#FFFFFF', brandInk: P.ink, footBg: P.bg, footInk: P.ink });
+    const B = blocks(L, c, { title: P.op, titleFx: { sk: P.ink, sw: 0.08, sh: P.ink }, sub: P.op, subFx: { sk: P.ink, sw: 0.1 }, hiBg: P.ink, hiInk: '#FFFFFF', body: P.op, bodyFx: { sk: P.ink, sw: 0.12 }, bullet: P.a, ctaBg: P.a, ctaInk: P.oa, ctaSk: P.ink });
+    const bt = c.price || c.hi, bo = { badge: { bg: P.a, ink: P.oa, sk: P.ink, rot: -10 } }, kmax = clamp(u * 0.15, 5, 130), av = bottom - top;
+    const seq = [B.title, B.sub, c.price ? B.hi : null, B.points, B.info, B.cta];
+    if (L.orient === 'land') {
+      const cw = S.w * 0.4;
+      stack(L, { x: S.x, y: top, w: S.w - cw - m, h: av }, seq, { kmax, kmin: 3.2, valign: 'center' });
+      showcase(L, { x: S.x + S.w - cw, y: top, w: cw, h: av }, c, bt, bo);
+    } else {
+      const sh = (c.photo || bt) ? av * 0.36 : 0;
+      stack(L, { x: S.x, y: top, w: S.w, h: av }, [B.title, B.sub, sh ? { space: sh, key: 'show', gap: 0.45 } : null, ...seq.slice(2)], { kmax, kmin: 3.2, valign: 'center' });
+      if (L.slots.show) showcase(L, L.slots.show, c, bt, bo);
+    }
+  } },
+  market: { cat: 'ad', n: '量販 DM', d: '量販店風格：斜切標頭、大價格框、勾選清單；適合特價清單、賣場、菜單促銷', draw(L, c) {
+    const { T, S, W, H, pal: P, m, u } = L, land = L.orient === 'land';
+    R(L, 0, 0, W, H, P.bg);
+    const hh = T.y + T.h * (land ? 0.32 : 0.27), sl = hh * 0.84, bw = u * 0.02;
+    poly(L, [[0, 0], [W, 0], [W, sl], [0, hh]], P.p);
+    poly(L, [[0, hh], [W, sl], [W, sl + bw], [0, hh + bw]], P.a);
+    let y = S.y;
+    const bt = brandTag(L, S.x, y, clamp(u * 0.065, 5, 26), c, { bg: '#FFFFFF', ink: P.ink });
+    if (bt) y += bt.h + m * 0.4;
+    const B = blocks(L, c, { title: P.op, titleFx: { sh: P.ink }, sub: P.op, price: P.p, priceFx: { sk: '#FFFFFF', sw: 0.05, sh: P.a }, hiBg: P.ink, hiInk: '#FFFFFF', body: P.ink, bullet: P.p, bs: 'check', ctaBg: P.p, ctaInk: P.op });
+    stack(L, { x: S.x, y, w: S.w, h: sl - m * 0.5 - y }, [B.title, B.sub], { kmax: clamp(u * 0.13, 5, 110), kmin: 3.2, valign: 'center' });
+    const { bottom } = chrome(L, c, { noBrand: true, footBg: P.p, footInk: P.op });
+    const top = hh + bw + m * 0.8, av = bottom - top, rest = [B.points, B.info, B.cta];
+    const hasCard = !!(c.price || c.hi || c.photo), hasRest = !!(c.points || c.info || c.cta);
+    let card = null, list = { x: S.x, y: top, w: S.w, h: av };
+    if (hasCard) {
+      if (land && hasRest) { card = { x: S.x, y: top, w: S.w * 0.52, h: av }; list = { x: S.x + S.w * 0.52 + m, y: top, w: S.w * 0.48 - m, h: av }; }
+      else { const ch = hasRest ? av * 0.44 : av; card = { x: S.x, y: top, w: S.w, h: ch }; list = { x: S.x, y: top + ch + m * 0.8, w: S.w, h: av - ch - m * 0.8 }; }
+      box4(L, card, '#FFFFFF', u * 0.02, P.p, Math.max(0.6, u * 0.01));
+      let inner = { x: card.x + m * 0.6, y: card.y + m * 0.5, w: card.w - m * 1.2, h: card.h - m };
+      if (c.photo && (c.price || c.hi)) { const pw = inner.w * 0.42; photo(L, { x: inner.x, y: inner.y, w: pw, h: inner.h }, c, { r: u * 0.012 }); inner = { ...inner, x: inner.x + pw + m * 0.5, w: inner.w - pw - m * 0.5 }; }
+      else if (c.photo) photo(L, inner, c, { r: u * 0.012 });
+      const items = c.price ? [{ ...B.hi, f: 0.3, gap: 0.3 }, { ...B.price, f: 1 }] : c.hi ? [{ ...B.hi, pill: null, f: 1, c: P.p, balance: true, fx: B.price.fx }] : [];
+      if (items.length) stack(L, inner, items, { kmax: inner.h * 0.62, kmin: 3.2, valign: 'center', align: 'center' });
+    }
+    if (hasRest && list.h > 0) stack(L, list, rest, { kmax: clamp(u * 0.11, 4, 80), kmin: 3, valign: 'center' });
+  } },
+  bignum: { cat: 'ad', n: '超大數字', d: '價格或折扣超大、背景大圓、角落色塊；適合折扣、限時特價、倒數活動', draw(L, c) {
+    const { T, S, W, H, pal: P, m, u, b } = L, land = L.orient === 'land';
+    R(L, 0, 0, W, H, P.bg);
+    const k = u * 0.34 + b;
+    poly(L, [[W - k, 0], [W, 0], [W, k]], P.p);
+    poly(L, [[0, H - k * 0.6], [0, H], [k * 0.6, H]], P.a);
+    const { top, bottom } = chrome(L, c, { brandInk: P.ink, footInk: P.ink, footLine: P.ink });
+    const big = c.price || c.hi || c.title, av = bottom - top;
+    const B = blocks(L, c, { title: P.ink, sub: P.p, hiBg: P.p, hiInk: P.op, body: P.ink, bullet: P.p, ctaBg: P.ink, ctaInk: '#FFFFFF' });
+    const rest = [big === c.title ? null : B.title, B.sub, c.price && c.hi ? B.hi : null, B.points, B.info, B.cta];
+    const bigItem = { text: big, f: 1, w: FONTS[L.font].head, c: P.p, lh: 1.02, balance: true, min: 4, fx: { sk: '#FFFFFF', sw: 0.05, sh: P.ink } };
+    const drawBig = sl => {
+      C(L, sl.x + sl.w / 2, sl.y + sl.h / 2, Math.min(sl.w, sl.h) * 0.5, P.a);
+      stack(L, { x: sl.x + sl.w * 0.02, y: sl.y, w: sl.w * 0.96, h: sl.h }, [bigItem], { kmax: sl.h * 0.8, kmin: 4, valign: 'center', align: 'center' });
+    };
+    if (land) {
+      const bw = S.w * 0.5;
+      drawBig({ x: S.x, y: top, w: bw, h: av });
+      stack(L, { x: S.x + bw + m, y: top, w: S.w - bw - m, h: av }, rest, { kmax: clamp(u * 0.12, 5, 100), kmin: 3.2, valign: 'center' });
+    } else {
+      const bh = av * 0.44;
+      const hasRest = rest.some(x => x && x.text && String(x.text).trim());
+      stack(L, { x: S.x, y: top, w: S.w, h: av }, [rest[0], rest[1], { space: hasRest ? bh : av * 0.9, key: 'big', gap: 0.5 }, ...rest.slice(2)], { kmax: clamp(u * 0.12, 5, 100), kmin: 3.2, valign: 'center' });
+      if (L.slots.big) drawBig(L.slots.big);
+    }
+  } },
+  coupon: { cat: 'ad', n: '優惠券', d: '整張做成折價券：虛線框、缺口、存根放 QR；適合折價券、兌換券、集點卡', draw(L, c) {
+    const { S, W, H, pal: P, m, u } = L, land = L.orient === 'land', F = FONTS[L.font];
+    R(L, 0, 0, W, H, P.p);
+    L.ops.push({ t: 'dots', x: 0, y: 0, w: W, h: H, step: u * 0.045, r0: u * 0.004, r1: u * 0.013, c: P.op, a: 0.16 });
+    const card = { x: S.x - m * 0.4, y: S.y - m * 0.4, w: S.w + m * 0.8, h: S.h + m * 0.8 }, ins = m * 0.3;
+    R(L, card.x, card.y, card.w, card.h, '#FFFFFF', u * 0.025);
+    L.ops.push({ t: 'stroke', x: card.x + ins, y: card.y + ins, w: card.w - 2 * ins, h: card.h - 2 * ins, r: u * 0.018, lw: lineW(L), c: P.p, dash: [u * 0.02, u * 0.012] });
+    const inner = { x: S.x + m * 0.2, y: S.y + m * 0.2, w: S.w - m * 0.4, h: S.h - m * 0.4 };
+    const stub = !!(c.qr || c.contact), nr = u * 0.035, dash = [u * 0.018, u * 0.012];
+    const B = blocks(L, c, { title: P.ink, sub: P.ink, price: P.p, priceFx: { sh: P.a }, hiBg: P.a, hiInk: P.oa, body: P.ink, center: true, ctaBg: P.p, ctaInk: P.op });
+    const main = [c.brand ? { text: c.brand.replace(/\n/g, ' '), f: 0.24, w: F.bold, c: P.p, gap: 0.35 } : null, B.title, B.sub, B.price, B.hi, { ...B.points, f: 0.26 }, { ...B.info, f: 0.26 }, B.cta];
+    let mb = inner;
+    if (stub && land) {
+      const dx = inner.x + inner.w * 0.7;
+      C(L, dx, card.y, nr, P.p); C(L, dx, card.y + card.h, nr, P.p);
+      L.ops.push({ t: 'line', x1: dx, y1: card.y + nr * 1.4, x2: dx, y2: card.y + card.h - nr * 1.4, lw: lineW(L) * 1.4, c: P.p, dash });
+      mb = { ...inner, w: dx - inner.x - m * 0.6 };
+      const sb = { x: dx + m * 0.6, y: inner.y, w: inner.x + inner.w - dx - m * 0.6, h: inner.h };
+      const q = c.qr ? Math.min(sb.w, qrSize(L), sb.h * 0.6) : 0;
+      if (q) qrOp(L, sb.x + (sb.w - q) / 2, sb.y + (c.contact ? 0 : (sb.h - q) / 2), q, c.qr);
+      if (c.contact) stack(L, { x: sb.x, y: sb.y + q + (q ? m * 0.4 : 0), w: sb.w, h: sb.h - q - (q ? m * 0.4 : 0) }, [{ text: c.contact, f: 1, w: F.body, c: P.ink, lh: 1.4 }], { kmax: clamp(u * 0.028, 2.6, 18), kmin: L.minText, valign: q ? 'top' : 'center', align: 'center' });
+    } else if (stub) {
+      const fh = footH(L, c), dy = inner.y + inner.h - fh - m * 0.5;
+      C(L, card.x, dy, nr, P.p); C(L, card.x + card.w, dy, nr, P.p);
+      L.ops.push({ t: 'line', x1: card.x + nr * 1.4, y1: dy, x2: card.x + card.w - nr * 1.4, y2: dy, lw: lineW(L) * 1.4, c: P.p, dash });
+      footer(L, { x: inner.x, y: inner.y + inner.h - fh, w: inner.w, h: fh }, c, { ink: P.ink });
+      mb = { ...inner, h: dy - inner.y - m * 0.5 };
+    }
+    if (c.photo) {
+      const ph = land ? 0 : mb.h * 0.28;
+      if (ph) { stack(L, mb, [main[0], { space: ph, key: 'ph', gap: 0.4 }, ...main.slice(1)], { kmax: clamp(u * 0.11, 5, 100), kmin: 3.2, valign: 'center', align: 'center' }); if (L.slots.ph) photo(L, L.slots.ph, c, { r: u * 0.015 }); }
+      else { const pw = mb.w * 0.4; photo(L, { x: mb.x, y: mb.y, w: pw, h: mb.h }, c, { r: u * 0.015 }); stack(L, { ...mb, x: mb.x + pw + m * 0.6, w: mb.w - pw - m * 0.6 }, main, { kmax: clamp(u * 0.11, 5, 100), kmin: 3.2, valign: 'center', align: 'center' }); }
+    } else stack(L, mb, main, { kmax: clamp(u * 0.11, 5, 100), kmin: 3.2, valign: 'center', align: 'center' });
+  } },
+  diagonal: { cat: 'ad', n: '斜切動感', d: '照片斜切加強調色斜帶，畫面有速度感；適合健身、運動、車行、活動宣傳', draw(L, c) {
+    const { T, S, W, H, pal: P, m, u } = L, land = L.orient === 'land', t = u * 0.035;
+    R(L, 0, 0, W, H, P.bg);
+    let pts, band, region, text;
+    if (!land) {
+      const y1 = T.y + T.h * 0.41, y2 = T.y + T.h * 0.29;
+      pts = [[0, 0], [W, 0], [W, y2], [0, y1]]; band = [[0, y1], [W, y2], [W, y2 + t], [0, y1 + t]]; region = { x: 0, y: 0, w: W, h: y1 };
+      text = { x: S.x, y: y1 + t + m * 0.7, w: S.w };
+    } else {
+      const x1 = T.x + T.w * 0.5, x2 = T.x + T.w * 0.38;
+      pts = [[0, 0], [x1, 0], [x2, H], [0, H]]; band = [[x1, 0], [x1 + t, 0], [x2 + t, H], [x2, H]]; region = { x: 0, y: 0, w: x1, h: H };
+      text = { x: x1 + t + m * 0.8, y: S.y, w: S.x + S.w - (x1 + t + m * 0.8) };
+    }
+    L.ops.push({ t: 'clipPoly', pts });
+    if (c.photo) photo(L, region, c); else { R(L, region.x, region.y, region.w, region.h, P.p); stripes(L, region, u * 0.05, P.op, 0.12); C(L, region.w * 0.75, region.h * 0.4, u * 0.22, P.a, 0.9); }
+    L.ops.push({ t: 'unclip' });
+    poly(L, band, P.a);
+    brandTag(L, S.x, S.y, clamp(u * 0.07, 5, 28), c, { bg: '#FFFFFF', ink: P.ink, maxW: land ? text.x - S.x - m * 2 : S.w * 0.8 });
+    const B = blocks(L, c, { title: P.ink, sub: P.p, price: P.p, priceFx: { sh: P.a }, hiBg: P.p, hiInk: P.op, body: P.ink, bullet: P.p, ctaBg: P.ink, ctaInk: '#FFFFFF' });
+    let bottom = S.y + S.h;
+    if (c.contact || c.qr) { const fh = footH(L, c), ft = bottom - fh; hline(L, text.x, ft - m * 0.45, text.w, lineW(L), P.ink); footer(L, { x: text.x, y: ft, w: text.w, h: fh }, c, { ink: P.ink }); bottom = ft - m * 0.9; }
+    stack(L, { x: text.x, y: text.y, w: text.w, h: bottom - text.y }, [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], { kmax: clamp(u * 0.14, 5, 120), kmin: 3.2, valign: 'center' });
+  } },
+  pop: { cat: 'ad', n: '普普網點', d: '網點背景、漫畫對話框、粗黑描邊，活潑吸睛；適合親子、零食飲料、年輕品牌', draw(L, c) {
+    const { S, W, H, pal: P, m, u } = L, sw = Math.max(0.5, u * 0.009), land = L.orient === 'land';
+    R(L, 0, 0, W, H, P.a);
+    L.ops.push({ t: 'dots', x: 0, y: 0, w: W, h: H, step: u * 0.04, r0: u * 0.003, r1: u * 0.016, c: P.p, a: 0.35 });
+    const { top, bottom } = chrome(L, c, { brandBg: '#FFFFFF', brandInk: P.ink, footBg: '#FFFFFF', footInk: P.ink, footSk: P.ink, footSkW: sw * 1.5 });
+    const av = bottom - top, tail = u * 0.05;
+    const B = blocks(L, c, { title: P.ink, sub: P.p, hiBg: P.ink, hiInk: '#FFFFFF', body: P.oa, bullet: P.ink, ctaBg: P.p, ctaInk: P.op, ctaSk: P.ink });
+    const bt = c.price || c.hi, bo = { badge: { bg: P.p, ink: P.op, sk: P.ink, rot: 9, n: 14 }, sk: P.ink };
+    const bub = { x: S.x, y: top, w: land ? S.w * 0.56 : S.w, h: av * (land ? 0.5 : 0.34) - tail };
+    box4(L, bub, '#FFFFFF', u * 0.035, P.ink, sw);
+    const tx = bub.x + bub.w * 0.2;
+    poly(L, [[tx, bub.y + bub.h - sw * 1.5], [tx + bub.w * 0.14, bub.y + bub.h - sw * 1.5], [tx - bub.w * 0.04, bub.y + bub.h + tail]], '#FFFFFF');
+    pline(L, [[tx, bub.y + bub.h - sw * 0.5], [tx - bub.w * 0.04, bub.y + bub.h + tail], [tx + bub.w * 0.14, bub.y + bub.h - sw * 0.5]], sw, P.ink);
+    stack(L, { x: bub.x + m * 0.6, y: bub.y + m * 0.45, w: bub.w - m * 1.2, h: bub.h - m * 0.9 }, [B.title, B.sub], { kmax: clamp(u * 0.14, 5, 120), kmin: 3.2, valign: 'center' });
+    const y2 = bub.y + bub.h + tail + m * 0.6;
+    const rest = [c.price ? B.hi : null, B.points, B.info, B.cta];
+    if (land) {
+      const cw = S.w * 0.4;
+      showcase(L, { x: S.x + S.w - cw, y: top, w: cw, h: av }, c, bt, bo);
+      stack(L, { x: S.x, y: y2, w: S.w - cw - m, h: bottom - y2 }, rest, { kmax: clamp(u * 0.11, 4, 90), kmin: 3, valign: 'center' });
+    } else {
+      const sh = (c.photo || bt) ? (bottom - y2) * 0.48 : 0;
+      stack(L, { x: S.x, y: y2, w: S.w, h: bottom - y2 }, [sh ? { space: sh, key: 'show', gap: 0.4 } : null, ...rest], { kmax: clamp(u * 0.11, 4, 90), kmin: 3, valign: 'center' });
+      if (L.slots.show) showcase(L, L.slots.show, c, bt, bo);
+    }
+  } },
+  neon: { cat: 'ad', n: '霓虹夜', d: '深色底配霓虹發光字，夜晚氣氛強烈；適合酒吧、夜市、KTV、電競、演唱活動', draw(L, c) {
+    const { T, W, H, pal: P, m, u, S } = L;
+    const n1 = lum(P.p) > 0.12 ? P.p : '#FF3EA5', n2 = lum(P.a) > 0.25 ? P.a : '#29F0FF';
+    R(L, 0, 0, W, H, '#0E0B1C');
+    L.ops.push({ t: 'grad', x: 0, y: 0, w: W, h: H, stops: [[0, 'rgba(70,24,130,0.6)'], [1, 'rgba(0,0,0,0)']] });
+    if (!L.small) { const fr = m * 0.45; L.ops.push({ t: 'stroke', x: T.x + fr, y: T.y + fr, w: T.w - 2 * fr, h: T.h - 2 * fr, r: u * 0.03, lw: lineW(L) * 1.6, c: n2, glow: n2 }); }
+    const { top, bottom } = chrome(L, c, { brandInk: n2, footInk: '#EDEAF7', footLine: 'rgba(255,255,255,0.35)' });
+    const B = blocks(L, c, { title: '#FFFFFF', titleFx: { glow: n1 }, sub: n2, price: '#FFFFFF', priceFx: { glow: n2 }, hiBg: 'rgba(0,0,0,0)', hiSk: n1, hiInk: '#FFFFFF', body: '#E8E6F5', center: true, ctaBg: n1, ctaInk: '#0E0B1C' });
+    const av = bottom - top, ph = c.photo ? av * (L.orient === 'land' ? 0 : 0.3) : 0;
+    if (c.photo && L.orient === 'land') {
+      const pw = S.w * 0.42;
+      L.ops.push({ t: 'stroke', x: S.x, y: top, w: pw, h: av, r: u * 0.02, lw: lineW(L) * 1.6, c: n1, glow: n1 });
+      photo(L, { x: S.x, y: top, w: pw, h: av }, c, { r: u * 0.02 });
+      stack(L, { x: S.x + pw + m, y: top, w: S.w - pw - m, h: av }, [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], { kmax: clamp(u * 0.13, 5, 110), kmin: 3.2, valign: 'center', align: 'center' });
+    } else {
+      stack(L, { x: S.x, y: top, w: S.w, h: av }, [B.title, B.sub, ph ? { space: ph, key: 'ph', gap: 0.45 } : null, B.price, B.hi, B.points, B.info, B.cta], { kmax: clamp(u * 0.13, 5, 110), kmin: 3.2, valign: 'center', align: 'center' });
+      if (L.slots.ph) { const s2 = L.slots.ph; L.ops.push({ t: 'stroke', x: s2.x, y: s2.y, w: s2.w, h: s2.h, r: u * 0.02, lw: lineW(L) * 1.6, c: n1, glow: n1 }); photo(L, s2, c, { r: u * 0.02 }); }
+    }
+  } },
+  tape: { cat: 'ad', n: '封鎖膠帶', d: '斜貼警示膠帶重複標語，強烈搶眼；適合限時搶購、新品上市、清倉', draw(L, c) {
+    const { T, S, W, H, pal: P, m, u } = L, land = L.orient === 'land';
+    R(L, 0, 0, W, H, P.bg);
+    const pw = land ? T.x + T.w * 0.48 : W, ph = land ? H : T.y + T.h * 0.36;
+    if (c.photo) photo(L, { x: 0, y: 0, w: pw, h: ph }, c); else { R(L, 0, 0, pw, ph, P.p); stripes(L, { x: 0, y: 0, w: pw, h: ph }, u * 0.06, P.op, 0.1); }
+    brandTag(L, S.x, S.y, clamp(u * 0.07, 5, 28), c, { bg: '#FFFFFF', ink: P.ink, maxW: land ? pw - S.x - m : S.w * 0.8 });
+    const tt = c.hi || c.price || c.brand || (c.title || '').split('\n')[0];
+    const th = clamp(u * 0.075, 5, 60), len = Math.hypot(W, H) * 1.2;
+    let textTop, tx = S.x, tw = S.w;
+    if (!land) {
+      if (tt) { tapeBand(L, W / 2, ph, len, th, -7, P.a, P.oa, tt); tapeBand(L, W / 2, ph + th * 0.55, len, th * 0.8, 4, P.ink, '#FFFFFF', c.cta || c.price || tt); }
+      textTop = ph + (tt ? th * 0.95 + Math.tan(7 * Math.PI / 180) * W / 2 : 0) + m * 0.6;
+    } else {
+      const cy = T.y + T.h * 0.16;
+      if (tt) tapeBand(L, W / 2, cy, len, th, -4, P.a, P.oa, tt);
+      tx = pw + m; tw = S.x + S.w - tx;
+      textTop = Math.max(S.y, tt ? cy + th / 2 + Math.tan(4 * Math.PI / 180) * W / 2 + m * 0.5 : S.y);
+    }
+    const B = blocks(L, c, { title: P.ink, sub: P.p, price: P.p, priceFx: { sh: P.a }, hiBg: P.p, hiInk: P.op, body: P.ink, bullet: P.p, ctaBg: P.ink, ctaInk: '#FFFFFF' });
+    let bottom = S.y + S.h;
+    if (c.contact || c.qr) { const fh = footH(L, c), ft = bottom - fh; hline(L, tx, ft - m * 0.45, tw, lineW(L), P.ink); footer(L, { x: tx, y: ft, w: tw, h: fh }, c, { ink: P.ink }); bottom = ft - m * 0.9; }
+    stack(L, { x: tx, y: textTop, w: tw, h: bottom - textTop }, [B.title, B.sub, B.price, tt === c.hi ? null : B.hi, B.points, B.info, tt === c.cta ? null : B.cta], { kmax: clamp(u * 0.13, 5, 110), kmin: 3.2, valign: 'center' });
+  } },
   photoTop: { n: '大圖置頂', d: '上方大照片、下方文字、底部色帶放聯絡資訊；適合店家、活動傳單', draw(L, c) {
     const { T, S, W, H, pal: P, m, u } = L;
     R(L, 0, 0, W, H, P.bg);
-    const B = blocks(L, c, { title: P.p, sub: P.ink, hiBg: P.a, hiInk: P.oa, body: P.ink, bullet: P.p });
-    const seq = [B.title, B.sub, B.hi, B.points, B.info], foot = c.contact || c.qr, fh = footH(L, c), kmax = clamp(u * 0.13, 5, 110);
+    const B = blocks(L, c, { title: P.p, sub: P.ink, price: P.p, hiBg: P.a, hiInk: P.oa, body: P.ink, bullet: P.p, ctaBg: P.ink, ctaInk: '#FFFFFF' });
+    const seq = [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], foot = c.contact || c.qr, fh = footH(L, c), kmax = clamp(u * 0.13, 5, 110);
     if (L.orient !== 'land') {
       const ph = T.y + T.h * (L.orient === 'sq' ? 0.32 : L.small ? 0.38 : 0.42);
       photo(L, { x: 0, y: 0, w: W, h: ph }, c);
@@ -412,9 +694,9 @@ const TEMPLATES = {
     brandTag(L, S.x, S.y, clamp(u * 0.075, 5, 30), c, { bg: '#FFFFFF', ink: P.ink });
     let bottom = S.y + S.h;
     if (c.contact || c.qr) { const fh = footH(L, c), top = bottom - fh; hline(L, S.x, top - m * 0.45, S.w, lineW(L), 'rgba(255,255,255,0.55)'); footer(L, { x: S.x, y: top, w: S.w, h: fh }, c, { ink: '#FFFFFF' }); bottom = top - m * 0.9; }
-    const B = blocks(L, c, { title: '#FFFFFF', sub: 'rgba(255,255,255,0.92)', hiBg: P.a, hiInk: P.oa, body: '#FFFFFF', bullet: P.a });
+    const B = blocks(L, c, { title: '#FFFFFF', sub: 'rgba(255,255,255,0.92)', price: P.a, hiBg: P.a, hiInk: P.oa, body: '#FFFFFF', bullet: P.a, ctaBg: '#FFFFFF', ctaInk: P.ink });
     const y0 = S.y + S.h * 0.3, w = L.orient === 'land' ? S.w * 0.62 : S.w;
-    stack(L, { x: S.x, y: y0, w, h: bottom - y0 }, [B.title, B.sub, B.hi, B.points, B.info], { kmax: clamp(u * 0.14, 5, 120), kmin: 3.2, valign: 'bottom' });
+    stack(L, { x: S.x, y: y0, w, h: bottom - y0 }, [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], { kmax: clamp(u * 0.14, 5, 120), kmin: 3.2, valign: 'bottom' });
   } },
   bold: { n: '色塊大字', d: '整面主色、超大標題、醒目優惠；適合促銷、特價、徵才、公告', draw(L, c) {
     const { T, S, W, H, pal: P, m, u } = L;
@@ -426,15 +708,15 @@ const TEMPLATES = {
     if (bt) y += bt.h + m * 0.7;
     let bottom = S.y + S.h;
     if (c.contact || c.qr) { const fh = footH(L, c), top = bottom - fh, b2 = top - m * 0.55; R(L, 0, b2, W, H - b2, P.bg); footer(L, { x: S.x, y: top, w: S.w, h: fh }, c, { ink: P.ink }); bottom = b2 - m * 0.6; }
-    const B = blocks(L, c, { title: P.op, sub: P.op, hiBg: P.a, hiInk: P.oa, body: P.op, bullet: P.a });
+    const B = blocks(L, c, { title: P.op, sub: P.op, price: P.a, priceFx: { sh: P.ink }, hiBg: P.a, hiInk: P.oa, body: P.op, bullet: P.a, ctaBg: P.bg, ctaInk: P.p });
     const kmax = clamp(u * 0.17, 5, 130);
     if (c.photo && L.orient === 'land') {
       const pw = S.w * 0.38;
       photo(L, { x: S.x + S.w - pw, y, w: pw, h: bottom - y }, c, { r: u * 0.03 });
-      stack(L, { x: S.x, y, w: S.w - pw - m, h: bottom - y }, [B.title, B.sub, B.hi, B.points, B.info], { kmax, kmin: 3.2, valign: 'center' });
+      stack(L, { x: S.x, y, w: S.w - pw - m, h: bottom - y }, [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], { kmax, kmin: 3.2, valign: 'center' });
     } else {
       const ph = c.photo ? (bottom - y) * 0.3 : 0;
-      stack(L, { x: S.x, y, w: S.w, h: bottom - y }, [B.title, B.sub, ph ? { space: ph, key: 'ph', gap: 0.5 } : null, B.hi, B.points, B.info], { kmax, kmin: 3.2, valign: c.photo ? 'top' : 'center' });
+      stack(L, { x: S.x, y, w: S.w, h: bottom - y }, [B.title, B.sub, B.price, ph ? { space: ph, key: 'ph', gap: 0.5 } : null, B.hi, B.points, B.info, B.cta], { kmax, kmin: 3.2, valign: c.photo ? 'top' : 'center' });
       if (L.slots.ph) photo(L, L.slots.ph, c, { r: u * 0.03 });
     }
   } },
@@ -446,15 +728,15 @@ const TEMPLATES = {
     if (bt) { y += bt.h + m * 0.4; hline(L, S.x, y, S.w, lw, P.ink); y += m * 0.7; }
     let bottom = S.y + S.h;
     if (c.contact || c.qr) { const fh = footH(L, c), top = bottom - fh; hline(L, S.x, top - m * 0.45, S.w, lw, P.ink); footer(L, { x: S.x, y: top, w: S.w, h: fh }, c, { ink: P.ink }); bottom = top - m * 0.9; }
-    const B = blocks(L, c, { title: P.ink, sub: P.p, hiBg: P.p, hiInk: P.op, body: P.ink, bullet: P.p });
+    const B = blocks(L, c, { title: P.ink, sub: P.p, price: P.p, priceF: 1.1, hiBg: P.p, hiInk: P.op, body: P.ink, bullet: P.p, ctaBg: P.ink, ctaInk: '#FFFFFF' });
     const kmax = clamp(u * 0.12, 5, 100);
     if (L.orient === 'land') {
       const pw = S.w * 0.46;
       photo(L, { x: S.x + S.w - pw, y, w: pw, h: bottom - y }, c);
-      stack(L, { x: S.x, y, w: S.w - pw - m, h: bottom - y }, [B.title, B.sub, B.hi, B.points, B.info], { kmax, kmin: 3.2, valign: 'top' });
+      stack(L, { x: S.x, y, w: S.w - pw - m, h: bottom - y }, [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], { kmax, kmin: 3.2, valign: 'top' });
     } else {
       const ph = (bottom - y) * 0.34;
-      stack(L, { x: S.x, y, w: S.w, h: bottom - y }, [B.title, B.sub, { space: ph, key: 'ph', gap: 0.55 }, B.hi, B.points, B.info], { kmax, kmin: 3.2, valign: 'top' });
+      stack(L, { x: S.x, y, w: S.w, h: bottom - y }, [B.title, B.sub, { space: ph, key: 'ph', gap: 0.55 }, B.price, B.hi, B.points, B.info, B.cta], { kmax, kmin: 3.2, valign: 'top' });
       if (L.slots.ph) photo(L, L.slots.ph, c);
     }
   } },
@@ -470,12 +752,12 @@ const TEMPLATES = {
     }
     const box = { x: S.x + pad, y: S.y + pad, w: S.w - 2 * pad, h: S.h - 2 * pad };
     const land = L.orient === 'land', d = c.photo ? Math.min(box.w * 0.55, box.h * (land ? 0.22 : 0.3)) : 0, q = c.qr ? qrSize(L) : 0, lg = c.logo ? clamp(u * (land ? 0.07 : 0.09), 6, 40) : 0;
-    const B = blocks(L, c, { title: P.ink, sub: P.p, hiBg: P.p, hiInk: P.op, body: P.ink, center: true });
+    const B = blocks(L, c, { title: P.ink, sub: P.p, price: P.p, priceF: 1.1, hiBg: P.p, hiInk: P.op, body: P.ink, center: true, ctaBg: P.p, ctaInk: P.op });
     stack(L, box, [
       d ? { space: d, key: 'ph', gap: 0.45 } : null,
       lg ? { space: lg, key: 'logo', gap: 0.25 } : null,
       c.brand ? { text: c.brand.replace(/\n/g, ' '), f: 0.24, w: F.bold, c: P.p, gap: 0.35 } : null,
-      B.title, B.sub, B.hi, { ...B.points, f: 0.28 }, { ...B.info, f: 0.28, gap: 0.45 },
+      B.title, B.sub, B.price, B.hi, { ...B.points, f: 0.28 }, { ...B.info, f: 0.28, gap: 0.45 }, B.cta,
       c.contact ? { text: c.contact, f: 0.24, w: F.body, c: P.ink, lh: 1.45, gap: 0.4 } : null,
       q ? { space: q, key: 'qr', gap: 0 } : null
     ], { kmax: clamp(u * 0.12, 5, 100), kmin: 3.2, valign: 'center', align: 'center' });
@@ -498,8 +780,8 @@ const TEMPLATES = {
     if (bt) box = { ...box, y: box.y + bt.h + m * 0.5, h: box.h - bt.h - m * 0.5 };
     let bottom = box.y + box.h;
     if (c.contact || c.qr) { const fh = footH(L, c), top = bottom - fh; hline(L, box.x, top - m * 0.4, box.w, lineW(L), P.p); footer(L, { x: box.x, y: top, w: box.w, h: fh }, c, { ink: P.ink }); bottom = top - m * 0.8; }
-    const B = blocks(L, c, { title: P.ink, sub: P.p, hiBg: P.a, hiInk: P.oa, body: P.ink, bullet: P.p });
-    stack(L, { x: box.x, y: box.y, w: box.w, h: bottom - box.y }, [B.title, B.sub, B.hi, B.points, B.info], { kmax: clamp(u * 0.12, 4, 90), kmin: 2.6, valign: 'top' });
+    const B = blocks(L, c, { title: P.ink, sub: P.p, price: P.p, priceF: 1.1, hiBg: P.a, hiInk: P.oa, body: P.ink, bullet: P.p, ctaBg: P.p, ctaInk: P.op });
+    stack(L, { x: box.x, y: box.y, w: box.w, h: bottom - box.y }, [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], { kmax: clamp(u * 0.12, 4, 90), kmin: 2.6, valign: 'top' });
   } }
 };
 
@@ -531,7 +813,30 @@ function shape(ctx, o, s, ox, oy) {
 function paint(ctx, ops, s, oy = 0, ox = 0, full = false) {
   for (const o of ops) switch (o.t) {
     case 'rect': ctx.fillStyle = o.c; shape(ctx, o, s, ox, oy); ctx.fill(); break;
-    case 'stroke': ctx.strokeStyle = o.c; ctx.lineWidth = o.lw * s; shape(ctx, o, s, ox, oy); ctx.stroke(); break;
+    case 'stroke':
+      ctx.save(); ctx.strokeStyle = o.c; ctx.lineWidth = o.lw * s; if (o.dash) ctx.setLineDash(o.dash.map(v => v * s));
+      if (o.glow) { ctx.shadowColor = o.glow; ctx.shadowBlur = o.lw * 6 * s; }
+      shape(ctx, o, s, ox, oy); ctx.stroke(); if (o.glow) ctx.stroke(); ctx.restore(); break;
+    case 'line': ctx.save(); ctx.strokeStyle = o.c; ctx.lineWidth = o.lw * s; if (o.dash) ctx.setLineDash(o.dash.map(v => v * s)); ctx.beginPath(); ctx.moveTo(o.x1 * s - ox, o.y1 * s - oy); ctx.lineTo(o.x2 * s - ox, o.y2 * s - oy); ctx.stroke(); ctx.restore(); break;
+    case 'poly':
+      ctx.globalAlpha = o.a ?? 1; ctx.fillStyle = o.c; ctx.beginPath();
+      o.pts.forEach(([x, y], i) => i ? ctx.lineTo(x * s - ox, y * s - oy) : ctx.moveTo(x * s - ox, y * s - oy));
+      ctx.closePath(); ctx.fill();
+      if (o.sk) { ctx.lineJoin = 'round'; ctx.lineWidth = o.sw * s; ctx.strokeStyle = o.sk; ctx.stroke(); }
+      ctx.globalAlpha = 1; break;
+    case 'pline': ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = o.c; ctx.lineWidth = o.lw * s; ctx.beginPath(); o.pts.forEach(([x, y], i) => i ? ctx.lineTo(x * s - ox, y * s - oy) : ctx.moveTo(x * s - ox, y * s - oy)); ctx.stroke(); ctx.restore(); break;
+    case 'push': { ctx.save(); const X = o.px * s - ox, Y = o.py * s - oy; ctx.translate(X, Y); ctx.rotate(o.rot); ctx.translate(-X, -Y); break; }
+    case 'pop': ctx.restore(); break;
+    case 'clipPoly': ctx.save(); ctx.beginPath(); o.pts.forEach(([x, y], i) => i ? ctx.lineTo(x * s - ox, y * s - oy) : ctx.moveTo(x * s - ox, y * s - oy)); ctx.closePath(); ctx.clip(); break;
+    case 'dots': {
+      ctx.globalAlpha = o.a ?? 1; ctx.fillStyle = o.c; ctx.beginPath();
+      let row = 0;
+      for (let y = o.y + o.step / 2; y < o.y + o.h; y += o.step, row++) {
+        const r = o.r0 + (o.r1 - o.r0) * ((y - o.y) / o.h); if (r <= 0.01) continue;
+        for (let x = o.x + o.step / 2 + (row % 2 ? o.step / 2 : 0); x < o.x + o.w + o.step; x += o.step) { ctx.moveTo((x + r) * s - ox, y * s - oy); ctx.arc(x * s - ox, y * s - oy, r * s, 0, Math.PI * 2); }
+      }
+      ctx.fill(); ctx.globalAlpha = 1; break;
+    }
     case 'circle': ctx.globalAlpha = o.a; ctx.fillStyle = o.c; ctx.beginPath(); ctx.arc(o.cx * s - ox, o.cy * s - oy, o.r * s, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; break;
     case 'ring': ctx.globalAlpha = o.a; ctx.strokeStyle = o.c; ctx.lineWidth = o.lw * s; ctx.beginPath(); ctx.arc(o.cx * s - ox, o.cy * s - oy, o.r * s, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1; break;
     case 'grad': { const g = ctx.createLinearGradient(0, o.y * s - oy, 0, (o.y + o.h) * s - oy); for (const [p, c] of o.stops) g.addColorStop(p, c); ctx.fillStyle = g; ctx.fillRect(o.x * s - ox, o.y * s - oy, o.w * s, o.h * s); break; }
@@ -544,7 +849,15 @@ function paint(ctx, ops, s, oy = 0, ox = 0, full = false) {
       ctx.drawImage(full ? o.img : (o.small || o.img), dx * s - ox, dy * s - oy, dw * s, dh * s);
       ctx.restore(); break;
     }
-    case 'text': ctx.fillStyle = o.c; ctx.font = `${o.w} ${o.size * s}px ${FONTS[o.fk].fam}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.fillText(o.s, o.x * s - ox, (o.y + o.size * 0.88) * s - oy); break;
+    case 'text': {
+      ctx.font = `${o.w} ${o.size * s}px ${FONTS[o.fk].fam}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+      const X = o.x * s - ox, Y = (o.y + o.size * 0.88) * s - oy;
+      if (o.glow) { ctx.save(); ctx.fillStyle = o.glow; ctx.shadowColor = o.glow; ctx.shadowBlur = o.size * 0.55 * s; ctx.fillText(o.s, X, Y); ctx.shadowBlur = o.size * 0.22 * s; ctx.fillText(o.s, X, Y); ctx.restore(); }
+      ctx.lineJoin = 'round'; ctx.miterLimit = 2;
+      if (o.sh) { const d = o.size * 0.07 * s; ctx.fillStyle = o.sh; if (o.sk) { ctx.lineWidth = o.sw * 2 * s; ctx.strokeStyle = o.sh; ctx.strokeText(o.s, X + d, Y + d); } ctx.fillText(o.s, X + d, Y + d); }
+      if (o.sk) { ctx.lineWidth = o.sw * 2 * s; ctx.strokeStyle = o.sk; ctx.strokeText(o.s, X, Y); }
+      ctx.fillStyle = o.c; ctx.fillText(o.s, X, Y); break;
+    }
     case 'qr': {
       const mtx = qrMatrix(o.data); if (!mtx) break;
       const n = mtx.length, qz = 2, cell = o.s / (n + 2 * qz);
@@ -617,14 +930,19 @@ async function buildJPG(L) {
 }
 
 /* ===== 推薦：有 AI 時問 AI，沒有時用關鍵字 ===== */
-const KW = [[/溫暖|溫馨|咖啡|烘焙|麵包|早午餐|餐/, 'sunset'], [/高級|質感|奢華|精品|沉穩|黑|金/, 'noir'], [/清新|乾淨|專業|科技|醫|診所|藍|海/, 'sky'], [/自然|綠|植物|有機|小農|健康|森林/, 'forest'], [/可愛|粉|甜|寵物|親子|童|少女/, 'candy'], [/促銷|特價|折|優惠|熱鬧|節慶|過年|紅/, 'berry'], [/文青|手作|復古|木|日系|大地/, 'earth'], [/活潑|年輕|清涼|運動|夏/, 'mint']];
+const KW = [[/促銷|特價|清倉|量販|大賣場|週年慶|折扣|搶購/, 'sale'], [/科技|3C|電腦|手機|健身|運動|車/, 'electric'], [/夜|派對|酒|電競|KTV|夜市|美妝/, 'neonpop'], [/活潑|果汁|飲料|新鮮|水果|夏天/, 'citrus'], [/溫暖|溫馨|咖啡|烘焙|麵包|早午餐|餐/, 'sunset'], [/高級|質感|奢華|精品|沉穩|黑|金/, 'noir'], [/清新|乾淨|專業|科技|醫|診所|藍|海/, 'sky'], [/自然|綠|植物|有機|小農|健康|森林/, 'forest'], [/可愛|粉|甜|寵物|親子|童|少女/, 'candy'], [/促銷|特價|折|優惠|熱鬧|節慶|過年|紅/, 'berry'], [/文青|手作|復古|木|日系|大地/, 'earth'], [/活潑|年輕|清涼|運動|夏/, 'mint']];
 function ruleOpts(c, vibe, spec) {
   const text = vibe + ' ' + [c.brand, c.title, c.sub, c.hi].join(' ');
-  const pals = [...new Set([...KW.filter(([re]) => re.test(text)).map(([, p]) => p), 'sunset', 'sky', 'forest', 'berry'])];
+  const classic = /質感|典雅|簡約|高級|文青|優雅|乾淨|低調|專業/.test(vibe);
+  const pals = [...new Set([...KW.filter(([re]) => re.test(text)).map(([, p]) => p), ...(classic ? ['sunset', 'noir', 'forest'] : ['sale', 'electric', 'citrus', 'berry'])])];
   const font = /高級|典雅|質感|優雅|古典/.test(vibe) ? 'serif' : /手寫|可愛|溫馨|親切|文青|手作/.test(vibe) ? 'kai' : 'sans';
   const small = Math.min(spec.w, spec.h) < 80;
-  const t = small ? ['minimal', 'centered', 'bold'] : c.photo ? ['fullPhoto', 'photoTop', 'editorial'] : c.hi ? ['bold', 'photoTop', 'centered'] : ['centered', 'editorial', 'bold'];
-  const why = { minimal: '小尺寸用簡約排法最清楚', centered: '置中排列，正式又好讀', bold: '大字加色塊，遠遠就看得到', fullPhoto: '照片鋪滿最吸睛', photoTop: '照片和文字分開，資訊清楚', editorial: '留白多、有質感' };
+  const t = small ? ['minimal', 'coupon', 'bignum']
+    : classic ? (c.photo ? ['fullPhoto', 'editorial', 'photoTop'] : ['editorial', 'centered', 'bold'])
+    : /夜|酒|派對|電競|KTV|夜市/.test(text) ? ['neon', 'burst', 'tape']
+    : /券|兌換|集點/.test(text) ? ['coupon', 'burst', 'bignum']
+    : c.photo ? ['burst', 'diagonal', 'tape'] : c.price ? ['burst', 'bignum', 'market'] : ['burst', 'pop', 'tape'];
+  const why = { minimal: '小尺寸用簡約排法最清楚', centered: '置中排列，正式又好讀', bold: '大字加色塊，遠遠就看得到', fullPhoto: '照片鋪滿最吸睛', photoTop: '照片和文字分開，資訊清楚', editorial: '留白多、有質感', burst: '爆炸星價格標，促銷感最強', market: '量販 DM 風格，品項一目了然', bignum: '數字超大，折扣一眼就看到', coupon: '做成折價券，顧客會想留著', diagonal: '斜切畫面有速度感', pop: '網點加對話框，活潑吸睛', neon: '霓虹發光，夜晚氣氛強', tape: '警示膠帶，限時感強烈' };
   return t.map((tp, i) => ({ template: tp, palette: pals[i % pals.length], font, why: why[tp] }));
 }
 function aiPrompt(c, vibe, spec, polish) {
@@ -640,6 +958,8 @@ function aiPrompt(c, vibe, spec, polish) {
 主標題：${c.title}
 副標題：${c.sub}
 醒目標語：${c.hi}
+大字價格／折扣：${c.price}
+行動呼籲：${c.cta}
 內容重點：${c.points}
 活動資訊：${c.info}
 聯絡方式：${c.contact}
@@ -652,10 +972,10 @@ ${Object.entries(PALETTES).map(([k, v]) => `${k}：${v.n}，${v.mood}`).join('\n
 
 可用字型：sans 黑體（現代清楚）、serif 明體（典雅有質感）、kai 文楷（手寫感、親切）
 
-${polish ? '另外請潤飾文案：主標題短而有力（最多 14 字，可用 \\n 分兩行）、副標題一句話、醒目標語最多 14 字、內容重點每點最多 18 字。不可以新增或更改價格、日期、時間、地址、電話等事實；原本空白的欄位保持空字串。全部用繁體中文。' : '不要更改任何文字。'}
+${polish ? '另外請潤飾文案：主標題短而有力（最多 14 字，可用 \\n 分兩行）、副標題一句話、醒目標語最多 14 字、內容重點每點最多 18 字、行動呼籲最多 10 字（原本沒有也可以建議一句，例如「立即預約」）。不可以新增或更改價格、折扣、日期、時間、地址、電話等事實；除了行動呼籲，原本空白的欄位保持空字串。全部用繁體中文。' : '不要更改任何文字。'}
 
 只回覆 JSON，格式如下：
-{"options":[{"template":"版型代號","palette":"配色代號","font":"sans","why":"20 字內的理由"}]${polish ? ',"copy":{"title":"","sub":"","hi":"","points":[""]}' : ''}}`;
+{"options":[{"template":"版型代號","palette":"配色代號","font":"sans","why":"20 字內的理由"}]${polish ? ',"copy":{"title":"","sub":"","hi":"","points":[""],"cta":""}' : ''}}`;
 }
 function cleanOpts(list) {
   const seen = new Set(), out = [];
@@ -680,12 +1000,20 @@ async function endpointJSON(prompt) {
 }
 
 /* ===== 介面狀態 ===== */
-const FIELDS = ['brand', 'title', 'sub', 'hi', 'points', 'info', 'contact', 'qr'];
-const SAMPLE = { brand: '好日子早午餐', title: '早晨的好日子\n從這裡開始', sub: '現烤麵包・手沖咖啡・在地小農蔬菜', hi: '開幕首週 全品項 85 折', points: '每日現烤酸種麵包\n手沖單品咖啡 120 元起\n寵物友善，可預約包場', info: '12 月 6 日（六）開幕\n營業 07:30–15:00・週二公休', contact: '台中市西區範例路 12 號\n04-2300-0000', qr: 'https://example.com' };
+const FIELDS = ['brand', 'title', 'sub', 'hi', 'price', 'cta', 'points', 'info', 'contact', 'qr'];
+const SAMPLE = { brand: '好日子早午餐', title: '早晨的好日子\n從這裡開始', sub: '現烤麵包・手沖咖啡・在地小農蔬菜', hi: '開幕首週 全品項', price: '85折', cta: '掃碼預約座位', points: '每日現烤酸種麵包\n手沖單品咖啡 120 元起\n寵物友善，可預約包場', info: '12 月 6 日（六）開幕\n營業 07:30–15:00・週二公休', contact: '台中市西區範例路 12 號\n04-2300-0000', qr: 'https://example.com' };
 const PRESETS = [['A5 傳單', 148, 210], ['A4 傳單', 210, 297], ['A3 海報', 297, 420], ['A2 海報', 420, 594], ['名片', 90, 54], ['明信片', 148, 100], ['正方形', 210, 210], ['DL 長條', 99, 210]];
-const KEY = 'yijian-wenxuan-v1';
-const state = { spec: { w: 148, h: 210, bleed: 3, marks: true }, text: { ...SAMPLE }, style: { template: 'photoTop', palette: 'sunset', font: 'sans' }, vibe: '溫暖、明亮，有早晨的感覺', focus: 50, guides: true, photo: null, logo: null, opts: [], undo: null, L: null };
-try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); if (j) { Object.assign(state.spec, j.spec); Object.assign(state.text, j.text); Object.assign(state.style, j.style); if (typeof j.vibe === 'string') state.vibe = j.vibe; } } catch (e) { /* 沒有儲存資料 */ }
+const KEY = 'yijian-wenxuan-v2', OLD_KEY = 'yijian-wenxuan-v1';
+const state = { spec: { w: 148, h: 210, bleed: 3, marks: true }, text: { ...SAMPLE }, style: { template: 'burst', palette: 'sale', font: 'sans' }, vibe: '熱鬧、促銷感強、吸睛', focus: 50, guides: true, photo: null, logo: null, opts: [], undo: null, L: null };
+try {
+  const raw = localStorage.getItem(KEY), j = JSON.parse(raw || localStorage.getItem(OLD_KEY) || 'null');
+  if (j) {
+    Object.assign(state.spec, j.spec);
+    if (j.text) for (const k of FIELDS) state.text[k] = typeof j.text[k] === 'string' ? j.text[k] : '';
+    if (raw && j.style && TEMPLATES[j.style.template]) Object.assign(state.style, j.style);
+    if (raw && typeof j.vibe === 'string') state.vibe = j.vibe;
+  }
+} catch (e) { /* 沒有儲存資料 */ }
 function save() { try { localStorage.setItem(KEY, JSON.stringify({ spec: state.spec, text: state.text, style: state.style, vibe: state.vibe })); } catch (e) { /* 無法儲存時略過 */ } }
 function content() { const t = {}; for (const k of FIELDS) t[k] = String(state.text[k] || '').trim(); return { ...t, photo: state.photo, logo: state.logo, focus: state.focus / 100 }; }
 
@@ -705,7 +1033,9 @@ if (document.fonts) document.fonts.addEventListener('loadingdone', () => { emCac
 /* ===== 畫面 ===== */
 function buildPickers() {
   $('#presets').innerHTML = PRESETS.map(([n, w, h], i) => `<button type="button" class="chip" data-i="${i}" aria-pressed="false">${n}<small>${w}×${h}</small></button>`).join('');
-  $('#thumbs').innerHTML = Object.entries(TEMPLATES).map(([k, t]) => `<button type="button" class="thumb" data-t="${k}" aria-pressed="false"><span class="cv"><canvas></canvas></span><span>${t.n}</span></button>`).join('');
+  const tb = ([k, t]) => `<button type="button" class="thumb" data-t="${k}" aria-pressed="false"><span class="cv"><canvas></canvas></span><span>${t.n}</span></button>`;
+  $('#thumbs-ad').innerHTML = Object.entries(TEMPLATES).filter(([, t]) => t.cat === 'ad').map(tb).join('');
+  $('#thumbs-classic').innerHTML = Object.entries(TEMPLATES).filter(([, t]) => t.cat !== 'ad').map(tb).join('');
   $('#pals').innerHTML = Object.entries(PALETTES).map(([k, p]) => `<button type="button" class="sw" data-p="${k}" aria-pressed="false"><span class="dots"><i style="background:${p.p}"></i><i style="background:${p.a}"></i><i style="background:${p.s}"></i></span>${p.n}</button>`).join('');
   $('#fonts').innerHTML = Object.entries(FONTS).map(([k, f]) => `<button type="button" class="chip" data-f="${k}" aria-pressed="false" style="font-family:${f.fam.replace(/"/g, "'")}">${f.n}</button>`).join('');
 }
@@ -717,7 +1047,7 @@ function fillInputs() {
 function markPickers() {
   const { w, h } = state.spec;
   document.querySelectorAll('#presets .chip').forEach(b => { const [, pw, ph] = PRESETS[b.dataset.i]; b.setAttribute('aria-pressed', (pw === w && ph === h) || (pw === h && ph === w)); });
-  document.querySelectorAll('#thumbs .thumb').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === state.style.template));
+  document.querySelectorAll('.tgrid .thumb').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === state.style.template));
   document.querySelectorAll('#pals .sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === state.style.palette));
   document.querySelectorAll('#fonts .chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.f === state.style.font));
   document.querySelectorAll('#opts .thumb').forEach(b => { const o = state.opts[b.dataset.o]; b.setAttribute('aria-pressed', !!o && o.template === state.style.template && o.palette === state.style.palette && o.font === state.style.font); });
@@ -790,7 +1120,8 @@ async function refresh() {
   if (my !== seq) return;
   state.L = layout(state.spec, c, state.style);
   drawPreview(); showInfo(state.L);
-  document.querySelectorAll('#thumbs .thumb').forEach(b => thumbTo(b.querySelector('canvas'), layout(state.spec, c, { ...state.style, template: b.dataset.t }), 104));
+  if (pdfCache && pdfCache.L !== state.L) { pdfCache = null; $('#share').textContent = SHARE_LABEL; }
+  document.querySelectorAll('.tgrid .thumb').forEach(b => thumbTo(b.querySelector('canvas'), layout(state.spec, c, { ...state.style, template: b.dataset.t }), 104));
   drawOpts(c); markPickers(); save();
 }
 
@@ -812,6 +1143,17 @@ async function saveFile(name, blob) {
   }
   return 'unavailable';
 }
+if (IN_APP && IS_TOP) {
+  $('#inapp').hidden = false;
+  $('#inappMsg').textContent = IN_LINE ? '你正在用 LINE 內建瀏覽器，這裡不能下載檔案。請按「用瀏覽器開啟」，或點右上角「⋯」選「以預設瀏覽器開啟」。' : '你正在用 App 內建瀏覽器，這裡不能下載檔案。請點右上角「⋯」，選「用瀏覽器開啟」。';
+  const android = /Android/i.test(UA), host = location.host + location.pathname + location.search;
+  $('#inappOpen').href = android ? `intent://${host}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(EXT_URL)};end` : EXT_URL;
+  if (!IN_LINE && !android) $('#inappOpen').hidden = true;
+}
+const SHARE_LABEL = '傳送 PDF（LINE、Email…）';
+const CAN_SHARE = (() => { try { return !hasClaude && !IN_APP && !!navigator.canShare && navigator.canShare({ files: [new File(['x'], 'a.pdf', { type: 'application/pdf' })] }); } catch (e) { return false; } })();
+let pdfCache = null;
+if (CAN_SHARE) $('#share').hidden = false;
 const SAVE_MSG = { declined: '已取消下載。', host: '這個 App 不能存檔，請用瀏覽器或電腦開啟這個頁面再下載。', busy: '上一個下載視窗還開著，處理完再按一次。', unavailable: '這裡無法下載檔案，請改用瀏覽器開啟這個頁面。' };
 const fileBase = () => (content().brand || '文宣').replace(/[\\/:*?"<>|\s]+/g, '').slice(0, 30) || '文宣';
 const mb = n => (n / 1048576).toFixed(n > 1048576 * 10 ? 0 : 1) + ' MB';
@@ -835,7 +1177,7 @@ $('#focus').addEventListener('input', e => { state.focus = +e.target.value; sche
 document.addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.closest('#presets')) { const [, w, h] = PRESETS[t.dataset.i]; const flip = state.spec.w > state.spec.h && w < h && h / w > 1.15; Object.assign(state.spec, flip ? { w: h, h: w } : { w, h }); fillInputs(); schedule(); }
-  else if (t.closest('#thumbs')) { state.style.template = t.dataset.t; schedule(); }
+  else if (t.closest('.tgrid')) { state.style.template = t.dataset.t; schedule(); }
   else if (t.closest('#pals')) { state.style.palette = t.dataset.p; schedule(); }
   else if (t.closest('#fonts')) { state.style.font = t.dataset.f; schedule(); }
   else if (t.closest('#opts')) { const o = state.opts[t.dataset.o]; if (o) { Object.assign(state.style, { template: o.template, palette: o.palette, font: o.font }); schedule(); } }
@@ -892,6 +1234,7 @@ $('#aibtn').addEventListener('click', async () => {
       if (polish && r.copy && typeof r.copy === 'object') {
         state.undo = { ...state.text };
         for (const k of ['title', 'sub', 'hi']) if (typeof r.copy[k] === 'string' && r.copy[k].trim() && state.text[k].trim()) state.text[k] = r.copy[k].replace(/\\n/g, '\n');
+        if (typeof r.copy.cta === 'string' && r.copy.cta.trim()) state.text.cta = r.copy.cta.trim().slice(0, 20);
         if (Array.isArray(r.copy.points) && state.text.points.trim()) { const p = r.copy.points.filter(x => typeof x === 'string' && x.trim()); if (p.length) state.text.points = p.join('\n'); }
         fillInputs(); $('#undo').hidden = false;
       }
@@ -918,9 +1261,29 @@ $('#pdf').addEventListener('click', async () => {
     const c = content(), title = c.brand || c.title.split('\n')[0] || '文宣';
     const r = await buildPDF(L, state.spec.marks, title, (i, n) => { st.textContent = `產生印刷檔中… ${Math.round(i / n * 100)}%`; });
     st.textContent = '檔案準備好了…';
-    const res = await saveFile(`${fileBase()}_${state.spec.w}x${state.spec.h}mm_印刷用.pdf`, r.blob);
-    st.textContent = res === 'saved' ? `已產生印刷用 PDF（${mb(r.blob.size)}，${r.dpi} dpi）。` : SAVE_MSG[res];
+    const name = `${fileBase()}_${state.spec.w}x${state.spec.h}mm_印刷用.pdf`;
+    pdfCache = { L, file: new File([r.blob], name, { type: 'application/pdf' }) };
+    if (CAN_SHARE) $('#share').textContent = '點這裡傳送剛剛的 PDF';
+    const res = await saveFile(name, r.blob);
+    st.textContent = IN_APP && IS_TOP ? '這個 App 的內建瀏覽器擋住了下載，請按最上方黃色區塊的「用瀏覽器開啟」再下載。' : res === 'saved' ? `已產生印刷用 PDF（${mb(r.blob.size)}，${r.dpi} dpi）。` : SAVE_MSG[res];
+    if (IN_APP && IS_TOP) window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) { st.textContent = '產生檔案時出錯了，請再試一次；照片很大時可以先換小一點的照片。'; }
+  finally { btn.disabled = false; }
+});
+$('#share').addEventListener('click', async () => {
+  const L = state.L, btn = $('#share'), st = $('#dlstat'); if (!L) return;
+  if (pdfCache && pdfCache.L === L) {
+    try { await navigator.share({ files: [pdfCache.file], title: pdfCache.file.name }); st.textContent = '已開啟傳送選單，可以選 LINE、Email 或存到檔案。'; }
+    catch (e) { if (!e || e.name !== 'AbortError') st.textContent = '這台裝置不能直接傳送檔案，請改用「下載印刷用 PDF」。'; }
+    return;
+  }
+  btn.disabled = true;
+  try {
+    const c = content(), r = await buildPDF(L, state.spec.marks, c.brand || c.title.split('\n')[0] || '文宣', (i, n) => { st.textContent = `產生印刷檔中… ${Math.round(i / n * 100)}%`; });
+    pdfCache = { L, file: new File([r.blob], `${fileBase()}_${state.spec.w}x${state.spec.h}mm_印刷用.pdf`, { type: 'application/pdf' }) };
+    btn.textContent = '檔案好了，點這裡傳送';
+    st.textContent = '印刷檔準備好了，再按一次「點這裡傳送」就能選 LINE、Email 或存到檔案。';
+  } catch (e) { st.textContent = '產生檔案時出錯了，請再試一次。'; }
   finally { btn.disabled = false; }
 });
 $('#jpg').addEventListener('click', async () => {
