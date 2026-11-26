@@ -107,6 +107,15 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:40px}
 /* 預覽台 */
 .stage{order:-1;position:sticky;top:0;align-self:start;z-index:8;height:var(--pvh);background:var(--mat);display:flex;flex-direction:column;padding:8px var(--pad) 4px;border-bottom:1px solid var(--line)}
 .proof{flex:1;min-height:0;display:grid;place-items:center;padding:4px}
+.ebox{border:1px solid var(--line);border-radius:14px;padding:4px 14px 12px;margin:4px 0 8px;background:var(--bg)}
+.ebox h3{margin-top:12px;color:inherit}
+.ehint{font-size:14px;line-height:1.6;color:var(--mute);margin:4px 0 8px}
+.selhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0 4px}.selhead b{font-size:16px;color:#FF6A00}
+.ghost.sm{min-height:40px;padding:6px 12px;font-size:14px}
+.nudge{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0}.nudge .lab{margin:0 4px 0 0}
+.hid{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0;font-size:14px;color:var(--mute)}
+.colors .ghost.sm{margin-left:auto}
+:root.adj-mode #pv{touch-action:none}
 #pv{display:block;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.14),0 10px 28px rgba(0,0,0,.16);cursor:default}
 .legend{display:flex;flex-wrap:wrap;gap:2px 14px;align-items:center;font-size:12px;color:var(--mute);min-height:34px}
 .legend i{display:inline-block;width:16px;border-top:2px solid #e6007e;vertical-align:middle;margin-right:5px}
@@ -240,22 +249,38 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:40px}
  </div>
 
  <div class="pane" id="pane-adjust" role="tabpanel" hidden>
+  <div class="ebox" id="selBox">
+   <h3>單獨調整每個元素</h3>
+   <p class="ehint" id="selHint">在預覽上<b>點一下</b>標題、價格、照片、QR Code… 就能選取，<b>直接拖曳</b>移動位置，拉<b>四個角</b>放大縮小。</p>
+   <div id="selPanel" hidden>
+    <div class="selhead"><b id="selName">主標題</b><button type="button" class="ghost sm" id="e-done">完成</button></div>
+    <label class="f sl"><span>大小<output id="o-es">100%</output></span><input type="range" id="e-s" min="30" max="300" step="5" value="100"></label>
+    <label class="f sl"><span>旋轉<output id="o-er">0°</output></span><input type="range" id="e-r" min="-180" max="180" step="1" value="0"></label>
+    <div class="row colors"><label class="cl" id="e-cl">文字色<input type="color" id="e-c" value="#000000"></label><label class="cl" id="e-fl">底色<input type="color" id="e-f" value="#ffffff"></label><button type="button" class="ghost sm" id="e-nocolor">恢復原色</button></div>
+    <div class="nudge" aria-label="微移"><span class="lab">微移</span><button type="button" class="ghost sm" data-nx="-1" aria-label="往左">←</button><button type="button" class="ghost sm" data-ny="-1" aria-label="往上">↑</button><button type="button" class="ghost sm" data-ny="1" aria-label="往下">↓</button><button type="button" class="ghost sm" data-nx="1" aria-label="往右">→</button><button type="button" class="ghost sm" id="e-center">水平置中</button></div>
+    <div class="row"><button type="button" class="ghost" id="e-hide">隱藏這個</button><button type="button" class="ghost" id="e-reset">這個恢復原狀</button><button type="button" class="ghost" id="e-text">改文字</button></div>
+   </div>
+   <div id="hiddenList" class="hid" hidden></div>
+   <div class="row"><button type="button" class="ghost" id="e-undo" disabled>復原上一步</button><button type="button" class="ghost" id="e-resetAll">全部元素恢復原位</button></div>
+  </div>
+  <h3>整體大小</h3>
   <div class="adj">
-   <label class="f sl"><span>標題大小<output id="o-title">100%</output></span><input type="range" id="a-title" min="70" max="150" step="5" value="100"></label>
-   <label class="f sl"><span>價格大小<output id="o-price">100%</output></span><input type="range" id="a-price" min="70" max="150" step="5" value="100"></label>
-   <label class="f sl"><span>內文大小<output id="o-body">100%</output></span><input type="range" id="a-body" min="70" max="150" step="5" value="100"></label>
-   <label class="f sl"><span>照片區大小<output id="o-photo">100%</output></span><input type="range" id="a-photo" min="60" max="140" step="5" value="100"></label>
+   <label class="f sl"><span>標題大小<output id="o-title">100%</output></span><input type="range" id="a-title" min="50" max="200" step="5" value="100"></label>
+   <label class="f sl"><span>價格大小<output id="o-price">100%</output></span><input type="range" id="a-price" min="50" max="200" step="5" value="100"></label>
+   <label class="f sl"><span>內文大小<output id="o-body">100%</output></span><input type="range" id="a-body" min="50" max="200" step="5" value="100"></label>
+   <label class="f sl"><span>照片區大小<output id="o-photo">100%</output></span><input type="range" id="a-photo" min="40" max="160" step="5" value="100"></label>
+   <label class="f sl"><span>邊界留白<output id="o-margin">100%</output></span><input type="range" id="a-margin" min="30" max="200" step="10" value="100"></label>
   </div>
   <div class="f"><span class="lab">文字對齊</span><div class="chips" id="a-align"><button type="button" class="chip" data-al="auto" aria-pressed="true">照版型</button><button type="button" class="chip" data-al="left" aria-pressed="false">靠左</button><button type="button" class="chip" data-al="center" aria-pressed="false">置中</button></div></div>
   <label class="check"><input type="checkbox" id="a-custom">使用自己的品牌色</label>
   <div class="row colors" id="colorRow" hidden><label class="cl">主色<input type="color" id="a-p" value="#e60012"></label><label class="cl">強調色<input type="color" id="a-a" value="#ffe100"></label></div>
-  <div class="row"><button type="button" class="ghost" id="a-reset">微調恢復預設</button></div>
+  <div class="row"><button type="button" class="ghost" id="a-reset">整體大小恢復預設</button></div>
  </div>
 </section>
 
 <section class="stage" id="stage" aria-label="預覽與下載">
  <div class="proof" id="proof"><canvas id="pv" role="img" aria-label="文宣預覽"></canvas></div>
- <div class="legend"><span><i></i>裁切</span><span><i class="s"></i>文字安全範圍</span><span class="hint">點文字可直接修改</span><label class="check"><input type="checkbox" id="guides" checked>參考線</label><button type="button" class="mini" id="collapse">縮小預覽</button></div>
+ <div class="legend"><span><i></i>裁切</span><span><i class="s"></i>文字安全範圍</span><span class="hint" id="pvHint">點文字可直接修改</span><label class="check"><input type="checkbox" id="guides" checked>參考線</label><button type="button" class="mini" id="collapse">縮小預覽</button></div>
  <div class="bar">
   <details class="checks" id="checks"><summary><span class="dot" aria-hidden="true"></span><span id="checkSum"></span></summary><ul class="warns" id="warns" aria-live="polite"></ul></details>
   <div class="dl"><button type="button" class="primary" id="pdf">下載印刷 PDF</button><button type="button" class="ghost" id="jpg">成品圖 JPG</button><button type="button" class="ghost" id="share" hidden>傳送 PDF</button></div>
@@ -387,7 +412,7 @@ function rays(L, cx, cy, len, n, c, a) { for (let i = 0; i < n; i += 2) { const 
 function stripes(L, b, sw, c, a) { L.ops.push({ t: 'clip', x: b.x, y: b.y, w: b.w, h: b.h }); for (let k = -b.h; k < b.w; k += sw * 2) poly(L, [[b.x + k, b.y], [b.x + k + sw, b.y], [b.x + k + sw + b.h, b.y + b.h], [b.x + k + b.h, b.y + b.h]], c, a); L.ops.push({ t: 'unclip' }); }
 const hline = (L, x, y, w, lw, c) => R(L, x, y - lw / 2, w, lw, c);
 const lineW = L => clamp(L.u * 0.004, 0.25, 1.4);
-const pf = (L, v, lo = 0.12, hi = 0.75) => clamp(v * L.adj.photo, lo, Math.max(hi, v));
+const pf = (L, v, lo = 0.07, hi = 0.88) => clamp(v * L.adj.photo, lo, Math.max(hi, v));
 
 // 把多段文字依比例一起縮放，找出能塞進框裡的最大字級
 function stack(L, box, list, o) {
@@ -426,6 +451,7 @@ function stack(L, box, list, o) {
   for (const r of best.res) {
     const it = r.it;
     if (it.space != null) { L.slots[it.key] = { x: box.x, y, w: box.w, h: it.space }; y += r.h + r.gap; continue; }
+    const pg = L.g; if (it.key) L.g = it.key;
     const lineH = r.size * r.lh, top = (r.lh - 1) * r.size / 2;
     const fx = Object.assign({ k: it.key }, it.fx ? { sk: it.fx.sk, sw: (it.fx.sw || 0) * r.size, sh: it.fx.sh, glow: it.fx.glow } : {});
     if (it.pill) {
@@ -434,7 +460,7 @@ function stack(L, box, list, o) {
       const x0 = align === 'center' ? box.x + (box.w - pw) / 2 : align === 'right' ? box.x + box.w - pw : box.x;
       box4(L, { x: x0, y, w: pw, h: r.h }, it.pill.bg, Math.min(r.h / 2, r.size * 0.55), it.pill.sk, Math.max(0.3, r.size * 0.08));
       r.lines.forEach((l, i) => txt(L, l.s, x0 + r.px + (pw - 2 * r.px - ar - l.w) / 2, y + r.py + i * lineH + top, r.size, it.w, it.c, fx));
-      if (ar) { const ax = x0 + pw - r.px - r.size * 0.55, cy = y + r.h / 2; poly(L, [[ax, cy - r.size * 0.3], [ax + r.size * 0.42, cy], [ax, cy + r.size * 0.3]], it.c); }
+      if (ar) { const ax = x0 + pw - r.px - r.size * 0.55, cy = y + r.h / 2; poly(L, [[ax, cy - r.size * 0.3], [ax + r.size * 0.42, cy], [ax, cy + r.size * 0.3]], it.c); L.ops[L.ops.length - 1].ar = true; }
     } else r.lines.forEach((l, i) => {
       const ly = y + i * lineH + top;
       const x = align === 'center' ? box.x + (box.w - l.w) / 2 : align === 'right' ? box.x + box.w - l.w : box.x + r.ind;
@@ -444,6 +470,7 @@ function stack(L, box, list, o) {
       }
       if (l.s) txt(L, l.s, x, ly, r.size, it.w, it.c, fx);
     });
+    L.g = pg;
     y += r.h + r.gap;
   }
   if (over) L.ops.push({ t: 'unclip' });
@@ -453,24 +480,26 @@ function stack(L, box, list, o) {
 function photo(L, box, c, o = {}) {
   if (!c.photo) return decor(L, box, o);
   const p = c.photo;
-  L.ops.push({ t: 'img', k: 'photo', img: p.img, small: p.small, iw: p.w, ih: p.h, x: box.x, y: box.y, w: box.w, h: box.h, r: o.r || 0, circle: !!o.circle, f: c.focus });
+  L.ops.push({ t: 'img', k: 'photo', g: 'photo', img: p.img, small: p.small, iw: p.w, ih: p.h, x: box.x, y: box.y, w: box.w, h: box.h, r: o.r || 0, circle: !!o.circle, f: c.focus });
   const ppi = 25.4 / Math.max(box.w / p.w, box.h / p.h);
   const need = L.u > 400 ? 100 : 150;
   if (ppi < need) L.warn(`照片解析度約 ${Math.round(ppi)} dpi，印出來可能會模糊，建議換解析度更高的照片（這個尺寸建議 ${need} dpi 以上）。`);
 }
 // 沒有照片時用幾何色塊代替
 function decor(L, b, o = {}) {
-  const P = L.pal, n = Math.min(b.w, b.h);
+  const P = L.pal, n = Math.min(b.w, b.h), pg = L.g; L.g = 'photo';
   L.ops.push({ t: 'clip', x: b.x, y: b.y, w: b.w, h: b.h, r: o.r || 0, circle: !!o.circle });
   R(L, b.x, b.y, b.w, b.h, P.s); L.ops[L.ops.length - 1].k = 'photo';
   C(L, b.x + b.w * 0.8, b.y + b.h * 0.3, n * 0.6, P.p);
   C(L, b.x + b.w * 0.16, b.y + b.h * 0.95, n * 0.42, P.a);
   ring(L, b.x + b.w * 0.42, b.y + b.h * 0.42, n * 0.16, n * 0.03, P.ink, 0.85);
   L.ops.push({ t: 'unclip' });
+  L.g = pg;
 }
 function brandTag(L, x, y, h, c, o) {
   const brand = (c.brand || '').replace(/\s*\n\s*/g, ' ');
   if (!brand && !c.logo) return null;
+  const pg = L.g; L.g = 'brand';
   h = Math.max(h, L.minText / 0.56 / (o.bg ? 0.62 : 1));
   const F = FONTS[L.font], pad = o.bg ? h * 0.3 : 0, ih = o.bg ? h * 0.62 : h;
   const maxW = o.maxW || L.S.w * 0.8;
@@ -487,6 +516,7 @@ function brandTag(L, x, y, h, c, o) {
     if (25.4 / Math.max(lw / c.logo.w, ih / c.logo.h) < 150) L.warn('Logo 解析度偏低，印出來可能有鋸齒，建議用更大的 Logo 檔。');
   }
   if (brand) txt(L, brand, x + pad + lw + gap, y + (h - size) / 2, size, F.bold, o.ink, { k: 'brand' });
+  L.g = pg;
   return { w, h };
 }
 const qrCache = new Map();
@@ -499,7 +529,7 @@ function qrMatrix(d) {
 }
 function qrOp(L, x, y, s, data) {
   if (!qrMatrix(data)) { L.warn('QR Code 內容太長，請改用短一點的連結。'); return; }
-  L.ops.push({ t: 'qr', k: 'qr', data, x, y, s, fg: '#111111', bg: '#FFFFFF' });
+  L.ops.push({ t: 'qr', k: 'qr', g: 'qr', data, x, y, s, fg: '#111111', bg: '#FFFFFF' });
   if (s < 12.5) L.warn('QR Code 小於 13 mm，部分手機可能掃不到。');
 }
 const qrSize = L => clamp(L.u * 0.12, 13, 70);
@@ -538,22 +568,25 @@ function chrome(L, c, o) {
 }
 // 爆炸星或圓章，裡面放大字
 function badge(L, cx, cy, r, text, o) {
+  const pg = L.g; L.g = o.key || 'badge';
   push(L, cx, cy, o.rot ?? -10);
   if (o.shape === 'circle') { C(L, cx, cy, r, o.bg); if (o.sk) ring(L, cx, cy, r, r * 0.05, o.sk); ring(L, cx, cy, r * 0.84, r * 0.025, o.ink, 0.7); }
   else poly(L, starPts(cx, cy, r, r * 0.82, o.n || 16), o.bg, 1, o.sk || null, o.sk ? r * 0.04 : 0);
   const side = r * 1.18;
-  stack(L, { x: cx - side / 2, y: cy - side / 2, w: side, h: side }, [{ key: o.key, text, f: 1, w: FONTS[L.font].head, c: o.ink, lh: 1.05, balance: true, min: L.minText, fx: o.fx }], { kmax: r * 0.62 * Math.min(L.adj.price, 1.25), kmin: L.minText, valign: 'center', align: 'center', lock: true });
+  stack(L, { x: cx - side / 2, y: cy - side / 2, w: side, h: side }, [{ key: o.key, text, f: 1, w: FONTS[L.font].head, c: o.ink, lh: 1.05, balance: true, min: L.minText, fx: o.fx }], { kmax: r * 0.62 * Math.min(L.adj.price, 2), kmin: L.minText, valign: 'center', align: 'center', lock: true });
   pop(L);
+  L.g = pg;
 }
 // 斜放的相片（白框＋影子）
 function tilt(L, b, c, deg, o = {}) {
-  const cx = b.x + b.w / 2, cy = b.y + b.h / 2, f = Math.min(b.w, b.h) * 0.045;
+  const cx = b.x + b.w / 2, cy = b.y + b.h / 2, f = Math.min(b.w, b.h) * 0.045, pg = L.g; L.g = 'photo';
   push(L, cx, cy, deg);
   R(L, b.x + f * 0.6, b.y + f * 0.9, b.w, b.h, o.shadow || 'rgba(0,0,0,0.28)');
   R(L, b.x, b.y, b.w, b.h, o.frame || '#FFFFFF');
   photo(L, { x: b.x + f, y: b.y + f, w: b.w - 2 * f, h: b.h - 2 * f }, c);
   if (o.sk) L.ops.push({ t: 'stroke', x: b.x, y: b.y, w: b.w, h: b.h, lw: Math.max(0.4, f * 0.4), c: o.sk });
   pop(L);
+  L.g = pg;
 }
 // 照片＋價格標的展示區
 function showcase(L, b, c, text, o) {
@@ -566,6 +599,7 @@ function showcase(L, b, c, text, o) {
 }
 // 斜貼膠帶，重複文字（超出邊緣的部分是裝飾）
 function tapeBand(L, cx, cy, len, th, deg, bg, ink, text, k) {
+  const pg = L.g; L.g = deg < 0 ? 'tape' : 'tape2';
   push(L, cx, cy, deg);
   R(L, cx - len / 2, cy - th / 2, len, th, bg);
   R(L, cx - len / 2, cy - th / 2 + th * 0.06, len, th * 0.05, ink);
@@ -573,6 +607,7 @@ function tapeBand(L, cx, cy, len, th, deg, bg, ink, text, k) {
   const F = FONTS[L.font], size = th * 0.5, unit = text.replace(/\s*\n\s*/g, ' ') + '　・　', uw = em(unit, F.head, L.font) * size;
   if (uw > 0) for (let x = cx - len / 2 - uw * 0.3; x < cx + len / 2; x += uw) L.ops.push({ t: 'text', k, s: unit, x, y: cy - size / 2, size, w: F.head, c: ink, fk: L.font, deco: true });
   pop(L);
+  L.g = pg;
 }
 
 /* ===== 版型：每個版型都會自動適應直式、橫式與小尺寸 ===== */
@@ -613,12 +648,12 @@ const TEMPLATES = {
     if (hasCard) {
       if (land && hasRest) { card = { x: S.x, y: top, w: S.w * 0.52, h: av }; list = { x: S.x + S.w * 0.52 + m, y: top, w: S.w * 0.48 - m, h: av }; }
       else { const ch = hasRest ? av * 0.44 : av; card = { x: S.x, y: top, w: S.w, h: ch }; list = { x: S.x, y: top + ch + m * 0.8, w: S.w, h: av - ch - m * 0.8 }; }
-      box4(L, card, '#FFFFFF', u * 0.02, P.p, Math.max(0.6, u * 0.01));
+      L.g = 'card'; box4(L, card, '#FFFFFF', u * 0.02, P.p, Math.max(0.6, u * 0.01)); L.g = null;
       let inner = { x: card.x + m * 0.6, y: card.y + m * 0.5, w: card.w - m * 1.2, h: card.h - m };
       if (c.photo && (c.price || c.hi)) { const pw = inner.w * pf(L, 0.42); photo(L, { x: inner.x, y: inner.y, w: pw, h: inner.h }, c, { r: u * 0.012 }); inner = { ...inner, x: inner.x + pw + m * 0.5, w: inner.w - pw - m * 0.5 }; }
       else if (c.photo) photo(L, inner, c, { r: u * 0.012 });
       const items = c.price ? [{ ...B.hi, f: 0.3 * L.adj.body, gap: 0.3 }, { ...B.price, f: L.adj.price }] : c.hi ? [{ ...B.hi, pill: null, f: L.adj.price, c: P.p, balance: true, fx: B.price.fx }] : [];
-      if (items.length) stack(L, inner, items, { kmax: inner.h * 0.62 * Math.min(L.adj.price, 1.2), kmin: 3.2, valign: 'center', align: 'center', lock: true });
+      if (items.length) stack(L, inner, items, { kmax: inner.h * 0.62 * Math.min(L.adj.price, 2), kmin: 3.2, valign: 'center', align: 'center', lock: true });
     }
     if (hasRest && list.h > 0) stack(L, list, rest, { kmax: clamp(u * 0.11, 4, 80), kmin: 3, valign: 'center' });
   } },
@@ -634,8 +669,8 @@ const TEMPLATES = {
     const rest = [big === c.title ? null : B.title, B.sub, c.price && c.hi ? B.hi : null, B.points, B.info, B.cta];
     const bigItem = { key: big === c.price ? 'price' : big === c.hi ? 'hi' : 'title', text: big, f: big === c.title ? L.adj.title : L.adj.price, w: FONTS[L.font].head, c: P.p, lh: 1.02, balance: true, min: 4, fx: { sk: '#FFFFFF', sw: 0.05, sh: P.ink } };
     const drawBig = sl => {
-      C(L, sl.x + sl.w / 2, sl.y + sl.h / 2, Math.min(sl.w, sl.h) * 0.5, P.a);
-      stack(L, { x: sl.x + sl.w * 0.02, y: sl.y, w: sl.w * 0.96, h: sl.h }, [bigItem], { kmax: sl.h * 0.8 * Math.min(L.adj.price, 1.2), kmin: 4, valign: 'center', align: 'center', lock: true });
+      L.g = bigItem.key; C(L, sl.x + sl.w / 2, sl.y + sl.h / 2, Math.min(sl.w, sl.h) * 0.5, P.a); L.g = null;
+      stack(L, { x: sl.x + sl.w * 0.02, y: sl.y, w: sl.w * 0.96, h: sl.h }, [bigItem], { kmax: sl.h * 0.8 * Math.min(L.adj.price, 2), kmin: 4, valign: 'center', align: 'center', lock: true });
     };
     if (land) {
       const bw = S.w * 0.5;
@@ -873,7 +908,7 @@ const TEMPLATES = {
     ], { kmax: clamp(u * 0.12, 5, 100), kmin: 3.2, valign: 'center', align: 'center' });
     const sl = L.slots;
     if (sl.ph) photo(L, { x: sl.ph.x + (sl.ph.w - d) / 2, y: sl.ph.y, w: d, h: d }, c, { circle: true });
-    if (sl.logo) { const lw2 = Math.min(lg * c.logo.w / c.logo.h, box.w * 0.6); L.ops.push({ t: 'img', img: c.logo.img, small: c.logo.small, iw: c.logo.w, ih: c.logo.h, x: sl.logo.x + (sl.logo.w - lw2) / 2, y: sl.logo.y, w: lw2, h: lg, fit: 'contain' }); }
+    if (sl.logo) { const lw2 = Math.min(lg * c.logo.w / c.logo.h, box.w * 0.6); L.ops.push({ t: 'img', k: 'logo', g: 'logo', img: c.logo.img, small: c.logo.small, iw: c.logo.w, ih: c.logo.h, x: sl.logo.x + (sl.logo.w - lw2) / 2, y: sl.logo.y, w: lw2, h: lg, fit: 'contain' }); }
     if (sl.qr) qrOp(L, sl.qr.x + (sl.qr.w - q) / 2, sl.qr.y, q, c.qr);
   } },
   minimal: { n: '簡約卡片', d: '白底加側邊色條，資訊清楚好讀；適合名片、價目卡、桌卡', draw(L, c) {
@@ -897,17 +932,116 @@ const TEMPLATES = {
 
 function layout(spec, c, style) {
   const b = spec.bleed, W = spec.w + 2 * b, H = spec.h + 2 * b, u = Math.min(spec.w, spec.h);
-  const T = { x: b, y: b, w: spec.w, h: spec.h }, m = clamp(u * 0.06, 3.5, 25);
+  const warns = [], adj = Object.assign({ title: 1, price: 1, body: 1, photo: 1, margin: 1, align: 'auto', custom: false }, style.adj || {});
+  const T = { x: b, y: b, w: spec.w, h: spec.h }, m = Math.max(3, clamp(u * 0.06, 3.5, 25) * clamp(adj.margin, 0.3, 2.5));
   const S = { x: T.x + m, y: T.y + m, w: T.w - 2 * m, h: T.h - 2 * m };
-  const warns = [], adj = Object.assign({ title: 1, price: 1, body: 1, photo: 1, align: 'auto', custom: false }, style.adj || {});
   let pal = PALETTES[style.palette] || PALETTES.sunset;
   if (adj.custom && /^#[0-9a-f]{6}$/i.test(adj.p || '') && /^#[0-9a-f]{6}$/i.test(adj.a || '')) pal = { ...pal, p: adj.p, op: lum(adj.p) > 0.4 ? '#1A1A1A' : '#FFFFFF', a: adj.a, oa: lum(adj.a) > 0.4 ? '#1A1A1A' : '#FFFFFF', s: mix(adj.p, '#FFFFFF', 0.86) };
-  const L = { ops: [], slots: {}, warns, adj, W, H, T, S, u, m, b, font: FONTS[style.font] ? style.font : 'sans', pal,
+  const ops = [];
+  const L = { ops, g: null, slots: {}, warns, adj, W, H, T, S, u, m, b, font: FONTS[style.font] ? style.font : 'sans', pal,
     small: u < 80, minText: u < 80 ? 1.9 : 2.3, orient: spec.w / spec.h > 1.15 ? 'land' : spec.h / spec.w > 1.15 ? 'port' : 'sq',
     warn(s) { if (!warns.includes(s)) warns.push(s); } };
+  ops.push = function (...a) { for (const o of a) if (L.g && o.g === undefined) o.g = L.g; return Array.prototype.push.apply(this, a); };
   (TEMPLATES[style.template] || TEMPLATES.photoTop).draw(L, c);
+  const ed = style.edits || {};
+  if (Object.keys(ed).length) { applyEdits(L, ed); checkSafe(L); }
   if (b < 2) L.warn('出血小於 2 mm，多數印刷廠要求 3 mm。');
   return L;
+}
+
+/* ===== 單獨調整：移動、縮放、旋轉、換色、隱藏 ===== */
+const EDIT_NAMES = { title: '主標題', sub: '副標題', price: '大字價格', hi: '醒目標語', cta: '行動呼籲', points: '內容重點', info: '活動資訊', contact: '聯絡方式', brand: '店名／Logo', logo: 'Logo', photo: '照片區', qr: 'QR Code', card: '價格框', tape: '膠帶', tape2: '膠帶（第二條）', badge: '價格標' };
+function corners(o) {
+  switch (o.t) {
+    case 'text': { const w = em(o.s, o.w, o.fk) * o.size; return [[o.x, o.y], [o.x + w, o.y], [o.x, o.y + o.size], [o.x + w, o.y + o.size]]; }
+    case 'rect': case 'img': case 'stroke': case 'grad': case 'clip': case 'dots': return [[o.x, o.y], [o.x + o.w, o.y], [o.x, o.y + o.h], [o.x + o.w, o.y + o.h]];
+    case 'qr': return [[o.x, o.y], [o.x + o.s, o.y], [o.x, o.y + o.s], [o.x + o.s, o.y + o.s]];
+    case 'circle': case 'ring': return [[o.cx - o.r, o.cy - o.r], [o.cx + o.r, o.cy - o.r], [o.cx - o.r, o.cy + o.r], [o.cx + o.r, o.cy + o.r]];
+    case 'poly': case 'pline': case 'clipPoly': return o.pts;
+    case 'line': return [[o.x1, o.y1], [o.x2, o.y2]];
+    default: return [];
+  }
+}
+function tfPt(tfs, x, y) { for (let i = tfs.length - 1; i >= 0; i--) { const t = tfs[i], dx = x - t.px, dy = y - t.py, c = Math.cos(t.rot), s = Math.sin(t.rot); x = t.px + dx * c - dy * s; y = t.py + dx * s + dy * c; } return [x, y]; }
+// 每個元素在頁面上的範圍（被裁切框住的部分只算框）
+function groupBoxes(ops) {
+  const B = {}, tfs = [], clips = [];
+  for (const o of ops) {
+    if (o.t === 'push') { tfs.push(o); continue; }
+    if (o.t === 'pop') { tfs.pop(); continue; }
+    if (o.t === 'unclip') { clips.pop(); continue; }
+    const inOwnClip = clips.length && clips[clips.length - 1] && clips[clips.length - 1] === o.g;
+    if (o.t === 'clip' || o.t === 'clipPoly') clips.push(o.g || null);
+    if (!o.g || (inOwnClip && o.t !== 'clip')) continue;
+    for (const [x, y] of corners(o)) {
+      const [X, Y] = tfPt(tfs, x, y), b = B[o.g] || (B[o.g] = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
+      b.x0 = Math.min(b.x0, X); b.y0 = Math.min(b.y0, Y); b.x1 = Math.max(b.x1, X); b.y1 = Math.max(b.y1, Y);
+    }
+  }
+  for (const k in B) { const b = B[k]; Object.assign(b, { x: b.x0, y: b.y0, w: b.x1 - b.x0, h: b.y1 - b.y0, cx: (b.x0 + b.x1) / 2, cy: (b.y0 + b.y1) / 2 }); }
+  return B;
+}
+function xformOp(o, cx, cy, k, dx, dy) {
+  const P = (x, y) => [cx + (x - cx) * k + dx, cy + (y - cy) * k + dy];
+  switch (o.t) {
+    case 'text': [o.x, o.y] = P(o.x, o.y); o.size *= k; if (o.sw) o.sw *= k; break;
+    case 'qr': [o.x, o.y] = P(o.x, o.y); o.s *= k; break;
+    case 'circle': case 'ring': [o.cx, o.cy] = P(o.cx, o.cy); o.r *= k; if (o.lw) o.lw *= k; break;
+    case 'poly': case 'pline': case 'clipPoly': o.pts = o.pts.map(([x, y]) => P(x, y)); if (o.sw) o.sw *= k; if (o.lw) o.lw *= k; break;
+    case 'line': [o.x1, o.y1] = P(o.x1, o.y1); [o.x2, o.y2] = P(o.x2, o.y2); o.lw *= k; break;
+    case 'push': [o.px, o.py] = P(o.px, o.py); break;
+    case 'unclip': case 'pop': break;
+    default: if (o.x != null) { [o.x, o.y] = P(o.x, o.y); o.w *= k; o.h *= k; if (o.r) o.r *= k; if (o.lw) o.lw *= k; if (o.step) { o.step *= k; o.r0 *= k; o.r1 *= k; } }
+  }
+}
+function applyEdits(L, ed) {
+  const boxes = groupBoxes(L.ops); L.base = boxes;
+  const D = k => ({ x: (ed[k].dx || 0) * L.T.w, y: (ed[k].dy || 0) * L.T.h });
+  let ops = L.ops.filter(o => !(o.g && ed[o.g] && ed[o.g].hidden));
+  for (const o of ops) {
+    const e = o.g && ed[o.g], b = o.g && boxes[o.g]; if (!e || !b) continue;
+    const d = D(o.g); xformOp(o, b.cx, b.cy, e.s || 1, d.x, d.y);
+    if (e.color && (o.t === 'text' || o.ar)) o.c = e.color;
+    if (e.fill && ((o.t === 'rect' && !o.k) || (o.t === 'poly' && !o.ar) || o.t === 'circle')) o.c = e.fill;
+  }
+  const out = [];
+  for (let i = 0; i < ops.length; i++) {
+    const o = ops[i], e = o.g && ed[o.g];
+    if (e && e.rot && boxes[o.g] && (i === 0 || ops[i - 1].g !== o.g)) { const b = boxes[o.g], d = D(o.g); out.push({ t: 'push', px: b.cx + d.x, py: b.cy + d.y, rot: e.rot * Math.PI / 180, g: o.g }); }
+    out.push(o);
+    if (e && e.rot && boxes[o.g] && (i === ops.length - 1 || ops[i + 1].g !== o.g)) out.push({ t: 'pop', g: o.g });
+  }
+  L.ops = out; L.edited = new Set(Object.keys(ed).filter(k => { const e = ed[k]; return !e.hidden && ((e.dx || 0) || (e.dy || 0) || (e.s || 1) !== 1 || (e.rot || 0)); }));
+}
+// 調整後檢查：文字或 QR Code 有沒有跑出安全範圍、成品範圍
+function checkSafe(L) {
+  const S = L.S, T = L.T, tfs = [], e = 0.05; let outS = false, outT = false;
+  for (const o of L.ops) {
+    if (o.t === 'push') { tfs.push(o); continue; }
+    if (o.t === 'pop') { tfs.pop(); continue; }
+    if ((o.t !== 'text' && o.t !== 'qr') || o.deco || !L.edited || !L.edited.has(o.g)) continue;
+    const pts = corners(o).map(([x, y]) => tfPt(tfs, x, y));
+    if (pts.some(([x, y]) => x < S.x - e || x > S.x + S.w + e || y < S.y - e || y > S.y + S.h + e)) outS = true;
+    if (pts.some(([x, y]) => x < T.x || x > T.x + T.w || y < T.y || y > T.y + T.h)) outT = true;
+  }
+  if (outT) L.warn('有文字或 QR Code 超出成品範圍，裁切後會被切掉，請移回藍色虛線內。');
+  else if (outS) L.warn('有文字或 QR Code 超出藍色虛線（安全範圍），裁切時可能被切到，建議往內移一點。');
+}
+function hitGroup(L, x, y) {
+  const tfs = [], hits = [];
+  for (const o of L.ops) {
+    if (o.t === 'push') { tfs.push(o); continue; }
+    if (o.t === 'pop') { tfs.pop(); continue; }
+    if (!o.g || o.t === 'clip' || o.t === 'clipPoly' || o.t === 'unclip' || o.t === 'grad' || o.t === 'dots') continue;
+    let px = x, py = y;
+    for (const t of tfs) { const dx = px - t.px, dy = py - t.py, c = Math.cos(-t.rot), s = Math.sin(-t.rot); px = t.px + dx * c - dy * s; py = t.py + dx * s + dy * c; }
+    const cs = corners(o); if (!cs.length) continue;
+    const xs = cs.map(p => p[0]), ys = cs.map(p => p[1]);
+    if (px >= Math.min(...xs) - 0.8 && px <= Math.max(...xs) + 0.8 && py >= Math.min(...ys) - 0.8 && py <= Math.max(...ys) + 0.8) { const i = hits.indexOf(o.g); if (i >= 0) hits.splice(i, 1); hits.unshift(o.g); }
+  }
+  // 滿版的照片當作背景，不會被點到
+  const B = L.base || groupBoxes(L.ops);
+  return hits.find(g => !(B[g] && B[g].w * B[g].h > L.W * L.H * 0.85)) || null;
 }
 
 // 上傳自己的設計：只負責補出血、套尺寸
@@ -1154,8 +1288,9 @@ const FIELDS = ['brand', 'title', 'sub', 'hi', 'price', 'cta', 'points', 'info',
 const SAMPLE = { brand: '好日子早午餐', title: '早晨的好日子\n從這裡開始', sub: '現烤麵包・手沖咖啡・在地小農蔬菜', hi: '開幕首週 全品項', price: '85折', cta: '掃碼預約座位', points: '每日現烤酸種麵包\n手沖單品咖啡 120 元起\n寵物友善，可預約包場', info: '12 月 6 日（六）開幕\n營業 07:30–15:00・週二公休', contact: '台中市西區範例路 12 號\n04-2300-0000', qr: 'https://example.com' };
 const PRESETS = [['A5 傳單', 148, 210], ['A4 傳單', 210, 297], ['A3 海報', 297, 420], ['A2 海報', 420, 594], ['名片', 90, 54], ['明信片', 148, 100], ['正方形', 210, 210], ['DL 長條', 99, 210]];
 const KEY = 'yijian-wenxuan-v3', OLD_KEYS = ['yijian-wenxuan-v2', 'yijian-wenxuan-v1'];
-const ADJ0 = { title: 1, price: 1, body: 1, photo: 1, align: 'auto', custom: false, p: '#E60012', a: '#FFE100' };
-const state = { mode: 'auto', design: null, fit: 'trim', dbg: '#FFFFFF', dfocus: 50, adj: { ...ADJ0 }, spec: { w: 148, h: 210, bleed: 3, marks: false }, text: { ...SAMPLE }, style: { template: 'burst', palette: 'sale', font: 'sans' }, vibe: '熱鬧、促銷感強、吸睛', focus: 50, guides: true, photo: null, logo: null, opts: [], undo: null, L: null };
+const ADJ0 = { title: 1, price: 1, body: 1, photo: 1, margin: 1, align: 'auto', custom: false, p: '#E60012', a: '#FFE100' };
+const ADJ_KEYS = ['title', 'price', 'body', 'photo', 'margin'];
+const state = { mode: 'auto', design: null, fit: 'trim', dbg: '#FFFFFF', dfocus: 50, adj: { ...ADJ0 }, edits: {}, sel: null, spec: { w: 148, h: 210, bleed: 3, marks: false }, text: { ...SAMPLE }, style: { template: 'burst', palette: 'sale', font: 'sans' }, vibe: '熱鬧、促銷感強、吸睛', focus: 50, guides: true, photo: null, logo: null, opts: [], undo: null, L: null };
 try {
   const raw = localStorage.getItem(KEY), old = OLD_KEYS.map(k => localStorage.getItem(k)).find(Boolean), j = JSON.parse(raw || old || 'null');
   if (j) {
@@ -1167,9 +1302,10 @@ try {
     if (j.text) for (const k of FIELDS) state.text[k] = typeof j.text[k] === 'string' ? j.text[k] : '';
     if (raw && j.style && TEMPLATES[j.style.template]) Object.assign(state.style, j.style);
     if (raw && typeof j.vibe === 'string') state.vibe = j.vibe;
+    if (raw && j.edits && typeof j.edits === 'object') for (const t in j.edits) if (TEMPLATES[t] && j.edits[t] && typeof j.edits[t] === 'object') state.edits[t] = j.edits[t];
   }
 } catch (e) { /* 沒有儲存資料 */ }
-function save() { try { localStorage.setItem(KEY, JSON.stringify({ spec: state.spec, text: state.text, style: state.style, vibe: state.vibe, adj: state.adj, mode: state.mode, fit: state.fit })); } catch (e) { /* 無法儲存時略過 */ } }
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ spec: state.spec, text: state.text, style: state.style, vibe: state.vibe, adj: state.adj, edits: state.edits, mode: state.mode, fit: state.fit })); } catch (e) { /* 無法儲存時略過 */ } }
 function content() { const t = {}; for (const k of FIELDS) t[k] = String(state.text[k] || '').trim(); return { ...t, photo: state.photo, logo: state.logo, focus: state.focus / 100 }; }
 
 /* ===== 字型載入 ===== */
@@ -1198,7 +1334,7 @@ function fillInputs() {
   $('#w').value = state.spec.w; $('#h').value = state.spec.h; $('#bleed').value = state.spec.bleed; $('#marks').checked = $('#marks2').checked = state.spec.marks;
   for (const k of FIELDS) $('#t-' + k).value = state.text[k] || '';
   $('#vibe').value = state.vibe;
-  for (const k of ['title', 'price', 'body', 'photo']) { const v = Math.round(state.adj[k] * 100); $('#a-' + k).value = v; $('#o-' + k).textContent = v + '%'; }
+  for (const k of ADJ_KEYS) { const v = Math.round((state.adj[k] ?? 1) * 100); $('#a-' + k).value = v; $('#o-' + k).textContent = v + '%'; }
   $('#a-custom').checked = !!state.adj.custom; $('#colorRow').hidden = !state.adj.custom; $('#a-p').value = state.adj.p.toLowerCase(); $('#a-a').value = state.adj.a.toLowerCase();
   document.querySelectorAll('input[name=fit]').forEach(r => { r.checked = r.value === state.fit; });
   $('#dbg').value = state.dbg.toLowerCase(); $('#dbgRow').hidden = state.fit !== 'contain';
@@ -1238,6 +1374,29 @@ function drawPreview() {
     ctx.setLineDash([5 * dpr, 4 * dpr]); ctx.strokeStyle = '#00A0E9'; ctx.strokeRect(o + L.S.x * s, o + L.S.y * s, L.S.w * s, L.S.h * s);
     ctx.restore();
   }
+  drawSel(ctx, L, s, mk * s, dpr);
+}
+let snapX = false, snapY = false;
+function selBox(L) { const b = state.sel && !L.own && groupBoxes(L.ops)[state.sel]; return b || null; }
+function drawSel(ctx, L, s, o, dpr) {
+  if (curTab !== 'adjust' || L.own) return;
+  ctx.save();
+  if (snapX || snapY) {
+    ctx.strokeStyle = '#E6007E'; ctx.lineWidth = 1 * dpr; ctx.setLineDash([]);
+    ctx.beginPath();
+    if (snapX) { const x = o + (L.T.x + L.T.w / 2) * s; ctx.moveTo(x, o); ctx.lineTo(x, o + L.H * s); }
+    if (snapY) { const y = o + (L.T.y + L.T.h / 2) * s; ctx.moveTo(o, y); ctx.lineTo(o + L.W * s, y); }
+    ctx.stroke();
+  }
+  const b = selBox(L);
+  if (b) {
+    const x = o + b.x * s, y = o + b.y * s, w = b.w * s, h = b.h * s, hs = 9 * dpr;
+    ctx.lineWidth = 2 * dpr; ctx.strokeStyle = '#FFFFFF'; ctx.setLineDash([]); ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = '#FF6A00'; ctx.setLineDash([6 * dpr, 4 * dpr]); ctx.strokeRect(x, y, w, h); ctx.setLineDash([]);
+    ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = '#FF6A00'; ctx.lineWidth = 2 * dpr;
+    for (const [cx, cy] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h]]) { ctx.fillRect(cx - hs / 2, cy - hs / 2, hs, hs); ctx.strokeRect(cx - hs / 2, cy - hs / 2, hs, hs); }
+  }
+  ctx.restore();
 }
 function thumbTo(cv, L, size) {
   const a = L.T.w / L.T.h, w = a >= 1 ? size : size * a, h = a >= 1 ? size / a : size;
@@ -1278,6 +1437,8 @@ function drawOpts(c) {
   });
 }
 let timer = 0, seq = 0;
+const curEdits = () => state.edits[state.style.template] || (state.edits[state.style.template] = {});
+function mainLayout(c) { const ed = state.edits[state.style.template]; return layout(state.spec, c || content(), { ...state.style, adj: state.adj, edits: ed && Object.keys(ed).length ? ed : null }); }
 function schedule() { clearTimeout(timer); timer = setTimeout(refresh, 120); }
 async function refresh() {
   const my = ++seq, c = content();
@@ -1286,8 +1447,9 @@ async function refresh() {
   await Promise.all([...new Set([state.style.font, ...state.opts.map(o => o.font)])].map(fk => ensureFonts(fk, text)));
   if (my !== seq) return;
   const own = state.mode === 'own';
-  state.L = own ? layoutOwn(state.spec, state.design, { fit: state.fit, bg: state.dbg, focus: state.dfocus / 100 }) : layout(state.spec, c, { ...state.style, adj: state.adj });
-  drawPreview(); showInfo(state.L);
+  state.L = own ? layoutOwn(state.spec, state.design, { fit: state.fit, bg: state.dbg, focus: state.dfocus / 100 }) : mainLayout(c);
+  if (state.sel && (own || !groupBoxes(state.L.ops)[state.sel])) state.sel = null;
+  drawPreview(); showInfo(state.L); syncSel();
   if (pdfCache && pdfCache.L !== state.L) { pdfCache = null; $('#share').textContent = SHARE_LABEL; }
   if (own) { markPickers(); save(); return; }
   document.querySelectorAll('.tgrid .thumb').forEach(b => thumbTo(b.querySelector('canvas'), layout(state.spec, c, { ...state.style, template: b.dataset.t, adj: state.adj }), 104));
@@ -1346,11 +1508,11 @@ $('#focus').addEventListener('input', e => { state.focus = +e.target.value; sche
 document.addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.closest('#presets')) { const [, w, h] = PRESETS[t.dataset.i]; const flip = state.spec.w > state.spec.h && w < h && h / w > 1.15; Object.assign(state.spec, flip ? { w: h, h: w } : { w, h }); fillInputs(); schedule(); }
-  else if (t.closest('.tgrid')) { state.style.template = t.dataset.t; schedule(); }
+  else if (t.closest('.tgrid')) { state.style.template = t.dataset.t; state.sel = null; schedule(); }
   else if (t.closest('#pals')) { state.style.palette = t.dataset.p; schedule(); }
   else if (t.closest('#fonts')) { state.style.font = t.dataset.f; schedule(); }
   else if (t.closest('#a-align')) { state.adj.align = t.dataset.al; schedule(); }
-  else if (t.closest('#opts')) { const o = state.opts[t.dataset.o]; if (o) { Object.assign(state.style, { template: o.template, palette: o.palette, font: o.font }); schedule(); } }
+  else if (t.closest('#opts')) { const o = state.opts[t.dataset.o]; if (o) { Object.assign(state.style, { template: o.template, palette: o.palette, font: o.font }); state.sel = null; schedule(); } }
 });
 function loadImage(file) {
   return new Promise((res, rej) => {
@@ -1546,7 +1708,7 @@ $('#fitRatio').addEventListener('click', () => {
   fillInputs(); schedule();
 });
 /* ===== 微調 ===== */
-for (const k of ['title', 'price', 'body', 'photo']) $('#a-' + k).addEventListener('input', e => { state.adj[k] = +e.target.value / 100; $('#o-' + k).textContent = e.target.value + '%'; schedule(); });
+for (const k of ADJ_KEYS) $('#a-' + k).addEventListener('input', e => { state.adj[k] = +e.target.value / 100; $('#o-' + k).textContent = e.target.value + '%'; schedule(); });
 $('#a-custom').addEventListener('change', e => {
   state.adj.custom = e.target.checked; $('#colorRow').hidden = !e.target.checked;
   if (e.target.checked && !state.adj.touched) { const P = PALETTES[state.style.palette] || PALETTES.sale; state.adj.p = P.p; state.adj.a = P.a; $('#a-p').value = P.p.toLowerCase(); $('#a-a').value = P.a.toLowerCase(); }
@@ -1559,10 +1721,12 @@ new ResizeObserver(() => { const b = $('#proof'); if (b.clientWidth !== lastW ||
 /* ===== 分頁 ===== */
 let curTab = 'size';
 function showTab(t, scroll = true) {
-  curTab = t;
+  curTab = t; document.documentElement.classList.toggle('adj-mode', t === 'adjust' && state.mode !== 'own');
+  $('#pvHint').textContent = t === 'adjust' ? '點一下選取，拖曳移動，拉四角縮放' : '點文字可直接修改';
   for (const b of document.querySelectorAll('#tabs [data-tab]')) { const on = b.dataset.tab === t; b.setAttribute('aria-selected', on); $('#pane-' + b.dataset.tab).hidden = !on; }
   const pane = $('#pane-' + t), tabs = $('#tabs');
   if (scroll && pane.getBoundingClientRect().top < tabs.getBoundingClientRect().bottom + 4) pane.scrollIntoView({ block: 'start' });
+  drawPreview();
 }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) showTab(b.dataset.tab); });
 document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.go)));
@@ -1595,11 +1759,125 @@ function editField(k) {
   box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
   box.addEventListener('animationend', () => box.classList.remove('flash'), { once: true });
 }
-$('#pv').addEventListener('click', e => { const L = state.L; if (!L || L.own) return; const k = hitField(L, ...pvPoint(e)); if (k) editField(k); });
+$('#pv').addEventListener('click', e => { const L = state.L; if (!L || L.own || curTab === 'adjust') return; const k = hitField(L, ...pvPoint(e)); if (k) editField(k); });
 let hoverRaf = 0;
-$('#pv').addEventListener('mousemove', e => { if (hoverRaf) return; hoverRaf = requestAnimationFrame(() => { hoverRaf = 0; const L = state.L; $('#pv').classList.toggle('edit', !!(L && !L.own && hitField(L, ...pvPoint(e)))); }); });
+$('#pv').addEventListener('mousemove', e => { if (hoverRaf || drag) return; hoverRaf = requestAnimationFrame(() => { hoverRaf = 0; const L = state.L, pv = $('#pv'); if (!L) return;
+  if (adjOn()) { const [x, y] = pvPoint(e); pv.classList.remove('edit'); pv.style.cursor = cornerAt(x, y) ? 'nwse-resize' : hitGroup(L, x, y) ? 'move' : 'default'; return; }
+  pv.style.cursor = ''; pv.classList.toggle('edit', !!(!L.own && hitField(L, ...pvPoint(e)))); }); });
+/* ===== 單獨調整：選取、拖曳、四角縮放、復原 ===== */
+const hist = [];
+function snapHist() { hist.push({ t: state.style.template, ed: JSON.stringify(state.edits[state.style.template] || {}) }); if (hist.length > 80) hist.shift(); $('#e-undo').disabled = false; }
+function undo() { const h = hist.pop(); if (!h) return; state.edits[h.t] = JSON.parse(h.ed); if (h.t !== state.style.template) state.style.template = h.t; $('#e-undo').disabled = !hist.length; schedule(); }
+function E(g) { const ed = curEdits(); return ed[g] || (ed[g] = {}); }
+function tidy() {
+  const ed = curEdits();
+  for (const k in ed) {
+    const e = ed[k];
+    if (Math.abs(e.dx || 0) < 1e-4) delete e.dx; if (Math.abs(e.dy || 0) < 1e-4) delete e.dy;
+    if (!e.rot) delete e.rot; if (!e.s || Math.abs(e.s - 1) < 1e-3) delete e.s; if (!e.hidden) delete e.hidden; if (!e.color) delete e.color; if (!e.fill) delete e.fill;
+    if (!Object.keys(e).length) delete ed[k];
+  }
+}
+let qRaf = 0;
+function quick() { if (qRaf) return; qRaf = requestAnimationFrame(() => { qRaf = 0; state.L = mainLayout(); pdfCache = null; drawPreview(); syncSel(); }); }
+const adjOn = () => curTab === 'adjust' && state.L && !state.L.own;
+const hex6 = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c.toLowerCase() : /^#[0-9a-f]{3}$/i.test(c || '') ? ('#' + c.slice(1).split('').map(x => x + x).join('')).toLowerCase() : '#000000';
+const isFill = o => (o.t === 'rect' && !o.k) || (o.t === 'poly' && !o.ar) || o.t === 'circle';
+function syncSel() {
+  const g = state.sel, L = state.L;
+  $('#selPanel').hidden = !g; $('#selHint').hidden = !!g;
+  if (g && L) {
+    const e = curEdits()[g] || {}, ops = L.ops.filter(o => o.g === g), tx = ops.find(o => o.t === 'text'), fl = ops.find(isFill);
+    $('#selName').textContent = EDIT_NAMES[g] || '選取的元素';
+    if (document.activeElement !== $('#e-s')) $('#e-s').value = Math.round((e.s || 1) * 100);
+    if (document.activeElement !== $('#e-r')) $('#e-r').value = e.rot || 0;
+    $('#o-es').textContent = Math.round((e.s || 1) * 100) + '%'; $('#o-er').textContent = (e.rot || 0) + '°';
+    $('#e-cl').hidden = !tx; $('#e-fl').hidden = !fl; $('#e-nocolor').hidden = !(e.color || e.fill);
+    if (tx && document.activeElement !== $('#e-c')) $('#e-c').value = hex6(e.color || tx.c);
+    if (fl && document.activeElement !== $('#e-f')) $('#e-f').value = hex6(e.fill || fl.c);
+    $('#e-text').hidden = !ops.some(o => o.k);
+  }
+  const ed = state.edits[state.style.template] || {}, hid = Object.keys(ed).filter(k => ed[k].hidden), box = $('#hiddenList');
+  box.hidden = !hid.length; box.textContent = '';
+  if (hid.length) { box.append('已隱藏：'); for (const k of hid) { const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost sm'; b.dataset.show = k; b.textContent = '顯示「' + (EDIT_NAMES[k] || k) + '」'; box.append(b); } }
+  $('#e-undo').disabled = !hist.length;
+}
+function select(g) { state.sel = g; drawPreview(); syncSel(); }
+function mmPerPx() { const L = state.L, mk = state.spec.marks ? MARK : 0; return (L.W + 2 * mk) / $('#pv').getBoundingClientRect().width; }
+function cornerAt(x, y) {
+  const b = selBox(state.L); if (!b) return null;
+  const tol = 16 * mmPerPx();
+  for (const [cx, cy] of [[b.x, b.y], [b.x + b.w, b.y], [b.x, b.y + b.h], [b.x + b.w, b.y + b.h]]) if (Math.abs(x - cx) < tol && Math.abs(y - cy) < tol) return [cx, cy];
+  return null;
+}
+let drag = null;
+$('#pv').addEventListener('pointerdown', e => {
+  if (!adjOn() || e.button > 0) return;
+  const L = state.L, [x, y] = pvPoint(e);
+  let mode = cornerAt(x, y) ? 'scale' : null, g = state.sel;
+  if (!mode) { g = hitGroup(L, x, y); if (g) mode = 'move'; }
+  if (!mode) { select(null); return; }
+  e.preventDefault();
+  state.sel = g;
+  const ed = curEdits()[g] || {}, cur = groupBoxes(L.ops)[g];
+  drag = { g, mode, x0: x, y0: y, dx0: ed.dx || 0, dy0: ed.dy || 0, s0: ed.s || 1, c: [cur.cx, cur.cy], d0: Math.max(0.5, Math.hypot(x - cur.cx, y - cur.cy)), moved: false };
+  try { $('#pv').setPointerCapture(e.pointerId); } catch (err) { /* 舊瀏覽器 */ }
+  drawPreview(); syncSel();
+});
+$('#pv').addEventListener('pointermove', e => {
+  if (!drag) return;
+  const L = state.L, [x, y] = pvPoint(e), px = mmPerPx();
+  if (!drag.moved) { if (Math.hypot(x - drag.x0, y - drag.y0) < 4 * px) return; snapHist(); drag.moved = true; }
+  const ed = E(drag.g);
+  if (drag.mode === 'move') {
+    let mx = x - drag.x0, my = y - drag.y0;
+    const tol = 7 * px, pcx = L.T.x + L.T.w / 2, pcy = L.T.y + L.T.h / 2;
+    snapX = Math.abs(drag.c[0] + mx - pcx) < tol; if (snapX) mx = pcx - drag.c[0];
+    snapY = Math.abs(drag.c[1] + my - pcy) < tol; if (snapY) my = pcy - drag.c[1];
+    ed.dx = drag.dx0 + mx / L.T.w; ed.dy = drag.dy0 + my / L.T.h;
+  } else ed.s = clamp(drag.s0 * Math.hypot(x - drag.c[0], y - drag.c[1]) / drag.d0, 0.3, 3);
+  quick();
+});
+function endDrag() { if (!drag) return; const moved = drag.moved; drag = null; snapX = snapY = false; if (moved) { tidy(); schedule(); } else drawPreview(); }
+$('#pv').addEventListener('pointerup', endDrag); $('#pv').addEventListener('pointercancel', endDrag);
+$('#pv').addEventListener('dblclick', e => { if (!adjOn()) return; const L = state.L, g = hitGroup(L, ...pvPoint(e)); const op = g && L.ops.find(o => o.g === g && o.k); if (op) editField(op.k); });
+function nudge(nx, ny) { if (!state.sel) return; snapHist(); const ed = E(state.sel); ed.dx = (ed.dx || 0) + nx * 0.005; ed.dy = (ed.dy || 0) + ny * 0.005 * state.L.T.w / state.L.T.h; tidy(); quick(); schedule(); }
+let sliding = null;
+function slideStart(id) { if (sliding !== id) { snapHist(); sliding = id; } }
+$('#e-s').addEventListener('input', e => { if (!state.sel) return; slideStart('s'); E(state.sel).s = +e.target.value / 100; $('#o-es').textContent = e.target.value + '%'; quick(); });
+$('#e-r').addEventListener('input', e => { if (!state.sel) return; slideStart('r'); E(state.sel).rot = +e.target.value; $('#o-er').textContent = e.target.value + '°'; quick(); });
+$('#e-c').addEventListener('input', e => { if (!state.sel) return; slideStart('c'); E(state.sel).color = e.target.value; quick(); });
+$('#e-f').addEventListener('input', e => { if (!state.sel) return; slideStart('f'); E(state.sel).fill = e.target.value; quick(); });
+for (const id of ['#e-s', '#e-r', '#e-c', '#e-f']) $(id).addEventListener('change', () => { sliding = null; tidy(); schedule(); });
+$('#selBox').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const g = state.sel;
+  if (b.dataset.show) { snapHist(); delete E(b.dataset.show).hidden; tidy(); schedule(); return; }
+  if (b.dataset.nx || b.dataset.ny) return nudge(+(b.dataset.nx || 0), +(b.dataset.ny || 0));
+  switch (b.id) {
+    case 'e-done': select(null); break;
+    case 'e-undo': undo(); break;
+    case 'e-resetAll': if (Object.keys(state.edits[state.style.template] || {}).length) { snapHist(); state.edits[state.style.template] = {}; } state.sel = null; schedule(); break;
+    case 'e-hide': if (g) { snapHist(); E(g).hidden = true; state.sel = null; schedule(); } break;
+    case 'e-reset': if (g) { snapHist(); delete curEdits()[g]; schedule(); } break;
+    case 'e-nocolor': if (g) { snapHist(); delete E(g).color; delete E(g).fill; tidy(); schedule(); } break;
+    case 'e-center': if (g) { const L = state.L, cur = groupBoxes(L.ops)[g]; snapHist(); const ed = E(g); ed.dx = (ed.dx || 0) + (L.T.x + L.T.w / 2 - cur.cx) / L.T.w; tidy(); schedule(); } break;
+    case 'e-text': if (g) { const op = state.L.ops.find(o => o.g === g && o.k); if (op) editField(op.k); } break;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (!adjOn() || e.target.closest('input,textarea,select,[contenteditable]')) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
+  if (!state.sel) return;
+  const st = e.shiftKey ? 4 : 1;
+  if (e.key === 'ArrowLeft') nudge(-st, 0); else if (e.key === 'ArrowRight') nudge(st, 0); else if (e.key === 'ArrowUp') nudge(0, -st); else if (e.key === 'ArrowDown') nudge(0, st);
+  else if (e.key === 'Escape') select(null);
+  else if (e.key === 'Delete' || e.key === 'Backspace') { snapHist(); E(state.sel).hidden = true; state.sel = null; schedule(); }
+  else return;
+  e.preventDefault();
+});
 buildPickers(); fillInputs(); refresh();
-window.yijian = { state, layout, layoutOwn, content, buildPDF, buildJPG, refresh, em, setMode, showTab, hitField, wrap, balanced, TEMPLATES, PALETTES, FONTS };
+window.yijian = { state, layout, layoutOwn, content, buildPDF, buildJPG, refresh, em, setMode, showTab, hitField, hitGroup, groupBoxes, mainLayout, select, undo, wrap, balanced, TEMPLATES, PALETTES, FONTS };
 }
 </script>
 </body>
