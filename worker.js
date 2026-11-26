@@ -92,8 +92,9 @@ async function image(body, request, env, json) {
     return json({ image: out.image });
   } catch (e) {
     const msg = String((e && e.message) || e);
-    if (/neuron|allocation|quota|daily|limit|4006|429/i.test(msg)) return json({ error: 'quota' }, 429);
-    if (/nsfw|safety|flagged|moderat|policy/i.test(msg)) return json({ error: 'blocked' }, 422);
-    return json({ error: 'upstream_error', detail: msg.slice(0, 200) }, 502);
+    const detail = msg.slice(0, 300);
+    if (/neurons|allocation|quota|4006|daily free/i.test(msg)) return json({ error: 'quota', detail }, 429);
+    if (/nsfw|unsafe|flagged|moderation|safety filter/i.test(msg)) return json({ error: 'blocked', detail }, 422);
+    return json({ error: 'upstream_error', detail }, 502);
   }
 }

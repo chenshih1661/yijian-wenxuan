@@ -237,9 +237,10 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:40px}
    <label class="f"><span>聯絡方式<em>地址、電話、LINE</em></span><textarea id="t-contact" rows="2"></textarea></label>
    <label class="f"><span>QR Code 連結<em>網址或 LINE 連結，會自動變成 QR Code</em></span><input type="text" id="t-qr" inputmode="url" autocapitalize="off" spellcheck="false"></label>
    <div class="ups">
-    <div class="up" id="up-photo"><b>主視覺照片</b><div class="pic" id="pic-photo">還沒選照片</div><div class="acts"><label class="btn">選照片<input class="sr" type="file" accept="image/*" id="in-photo"></label><button type="button" class="ghost" id="ai-open" hidden aria-expanded="false">AI 生成</button><button type="button" class="ghost" id="del-photo" hidden>移除</button></div></div>
+    <div class="up" id="up-photo"><b>主視覺照片</b><div class="pic" id="pic-photo">還沒選照片</div><div class="acts"><label class="btn">選照片<input class="sr" type="file" accept="image/*" id="in-photo"></label><button type="button" class="ghost" id="ai-open" hidden aria-expanded="false">AI 生成</button><button type="button" class="ghost" id="up-ai" hidden>AI 放大</button><button type="button" class="ghost" id="dl-photo" hidden>下載印刷用原圖</button><button type="button" class="ghost" id="del-photo" hidden>移除</button></div></div>
     <div class="up" id="up-logo"><b>Logo</b><div class="pic" id="pic-logo">還沒選 Logo</div><div class="acts"><label class="btn">選 Logo<input class="sr" type="file" accept="image/*" id="in-logo"></label><button type="button" class="ghost" id="del-logo" hidden>移除</button></div></div>
    </div>
+   <p class="status" id="up-stat" aria-live="polite"></p>
    <div class="aiimg" id="aiImg" hidden>
     <div class="selhead"><b>AI 生成主視覺</b><button type="button" class="ghost sm" id="ai-close">收起</button></div>
     <label class="f"><span>想要什麼畫面？<em>寫主角、場景、光線、顏色，越具體越好</em></span><textarea id="ai-desc" rows="3" placeholder="例如：木頭桌上一杯拿鐵和剛出爐的可頌，早晨陽光從窗戶照進來"></textarea></label>
@@ -248,6 +249,7 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:40px}
     <div class="row"><button type="button" class="primary" id="ai-go">產生 2 張</button><span class="ehint" id="ai-size"></span></div>
     <p class="status" id="ai-stat" aria-live="polite"></p>
     <div class="aigrid" id="ai-out"></div>
+    <div class="row" id="ai-dlrow" hidden><button type="button" class="ghost" id="ai-dl">下載印刷用原圖</button></div>
    </div>
    <label class="f" id="focusRow" hidden><span>照片裁切位置<em>重點被裁掉時拉這裡</em></span><input type="range" id="focus" min="0" max="100" value="50"></label>
   </div>
@@ -315,7 +317,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script>
 {
 /* ===== 設定：自架時把 aiEndpoint 改成你的 AI 服務網址（見 README） ===== */
-const CONFIG = { aiEndpoint: '', imageEndpoint: '', imageCount: 2, imageMaxSide: 1536 };
+const CONFIG = { aiEndpoint: '', imageEndpoint: 'https://yijian-ai.chen-shih1661.workers.dev/image', imageCount: 2, imageMaxSide: 1536, upscaleModel: 'models/realesr-general-x4v3.onnx', ortBase: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/', upscaleMaxWait: 60 };
 
 const $ = s => document.querySelector(s);
 /* ===== LINE 等 App 內建瀏覽器不能下載檔案：LINE 自動改用手機瀏覽器開啟 ===== */
@@ -1556,6 +1558,7 @@ function setPic(kind, im) {
   pic.textContent = ''; pic.append(el); $('#del-' + kind).hidden = false;
   if (kind === 'photo') $('#focusRow').hidden = false;
   schedule();
+  if (kind === 'photo') setTimeout(updUp, 300);
 }
 for (const kind of ['photo', 'logo']) {
   const pic = $('#pic-' + kind), del = $('#del-' + kind), empty = pic.textContent;
@@ -1567,7 +1570,7 @@ for (const kind of ['photo', 'logo']) {
     } catch (err) { pic.textContent = '這個檔案讀不出來，請換 JPG 或 PNG。'; }
     e.target.value = '';
   });
-  del.addEventListener('click', () => { if (state[kind]) URL.revokeObjectURL(state[kind].url); state[kind] = null; pic.textContent = empty; del.hidden = true; if (kind === 'photo') $('#focusRow').hidden = true; schedule(); });
+  del.addEventListener('click', () => { if (state[kind]) URL.revokeObjectURL(state[kind].url); state[kind] = null; pic.textContent = empty; del.hidden = true; if (kind === 'photo') { $('#focusRow').hidden = true; $('#up-stat').textContent = ''; updUp(); } schedule(); });
 }
 /* ===== AI 生成主視覺（需要在 CONFIG.imageEndpoint 填 Worker 網址，見 README） ===== */
 const AI_STYLES = [
@@ -1658,6 +1661,7 @@ $('#ai-go').addEventListener('click', async () => {
   aiUrls.forEach(u => URL.revokeObjectURL(u)); aiUrls = []; out.textContent = '';
   const cells = Array.from({ length: n }, () => { const d = document.createElement('div'); d.className = 'sk'; d.style.aspectRatio = `${sz.w} / ${sz.h}`; out.append(d); return d; });
   st.textContent = '正在畫圖，大約 10–30 秒…';
+  upBackend().then(ep => getSession(ep)).catch(() => null);
   const prompt = await imagePrompt(desc, slot), seed0 = Math.floor(Math.random() * 2e9);
   let okN = 0, err = null;
   for (let i = 0; i < n; i++) {
@@ -1679,11 +1683,140 @@ $('#ai-go').addEventListener('click', async () => {
 $('#ai-out').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b || !b._blob) return;
   try {
-    setPic('photo', await loadImage(b._blob));
+    const im = await loadImage(b._blob); im.ai = true; im.blob = b._blob;
+    setPic('photo', im);
     $('#ai-out').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
     $('#ai-stat').textContent = '已經放進文宣了。照片位置和大小可以到「微調」分頁再調整。';
+    await refresh(); upscalePhoto(true);
   } catch (err) { $('#ai-stat').textContent = '這張圖讀不出來，請換一張。'; }
 });
+/* ===== AI 放大（Real-ESRGAN，在顧客自己的瀏覽器裡計算，不花錢） ===== */
+let ortP = null, sessP = null, upJob = null;
+async function upBackend() {
+  try { if (navigator.gpu) { const a = await navigator.gpu.requestAdapter(); if (a) return 'webgpu'; } } catch (e) { /* 不支援 WebGPU */ }
+  return 'wasm';
+}
+function loadORT(ep) {
+  if (ortP) return ortP;
+  ortP = new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.crossOrigin = 'anonymous';
+    sc.src = CONFIG.ortBase + (ep === 'webgpu' ? 'ort.webgpu.min.js' : 'ort.wasm.min.js');
+    sc.onload = () => { const o = window.ort; if (!o) return rej(new Error('ort')); o.env.wasm.wasmPaths = CONFIG.ortBase; o.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 1) : 1; o.env.logLevel = 'error'; res(o); };
+    sc.onerror = () => rej(new Error('ort'));
+    document.head.append(sc);
+  }).catch(e => { ortP = null; throw e; });
+  return ortP;
+}
+function getSession(ep) {
+  if (!sessP) sessP = (async () => {
+    const o = await loadORT(ep), opt = ep2 => ({ executionProviders: [ep2], graphOptimizationLevel: 'all' });
+    try { return { o, s: await o.InferenceSession.create(CONFIG.upscaleModel, opt(ep)), ep }; }
+    catch (e) { if (ep !== 'webgpu') throw e; return { o, s: await o.InferenceSession.create(CONFIG.upscaleModel, opt('wasm')), ep: 'wasm' }; }
+  })().catch(e => { sessP = null; throw e; });
+  return sessP;
+}
+// 把圖切成小塊，一塊一塊用 AI 放大 4 倍，再縮到需要的倍率 s 貼回去（重疊邊緣避免接縫）
+async function srUpscale(img, iw, ih, s, onProg) {
+  const { o, s: sess, ep } = await getSession(await upBackend());
+  const T = ep === 'webgpu' ? 256 : 128, M = 12, tw = Math.min(T, iw), th = Math.min(T, ih);
+  const sc = document.createElement('canvas'); sc.width = iw; sc.height = ih;
+  const sx = sc.getContext('2d', { willReadFrequently: true }); sx.drawImage(img, 0, 0, iw, ih);
+  const src = sx.getImageData(0, 0, iw, ih).data;
+  const out = document.createElement('canvas'); out.width = Math.round(iw * s); out.height = Math.round(ih * s);
+  const ox = out.getContext('2d'); ox.imageSmoothingEnabled = true; ox.imageSmoothingQuality = 'high';
+  const tc = document.createElement('canvas'); tc.width = tw * 4; tc.height = th * 4;
+  const tx = tc.getContext('2d'), tile = tx.createImageData(tw * 4, th * 4), od = tile.data;
+  const grid = (n, t) => { if (t >= n) return [[0, n]]; const r = [], step = t - 2 * M; for (let a = 0; a < n; a += step) r.push([a, Math.min(n, a + step)]); return r; };
+  const gx = grid(iw, tw), gy = grid(ih, th), total = gx.length * gy.length, plane = tw * th, inp = new Float32Array(3 * plane), t0 = performance.now();
+  let done = 0;
+  for (const [iy0, iy1] of gy) for (const [ix0, ix1] of gx) {
+    const x0 = clamp(ix0 - M, 0, iw - tw), y0 = clamp(iy0 - M, 0, ih - th);
+    for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++) {
+      const si = ((y0 + y) * iw + x0 + x) * 4, di = y * tw + x;
+      inp[di] = src[si] / 255; inp[plane + di] = src[si + 1] / 255; inp[2 * plane + di] = src[si + 2] / 255;
+    }
+    const r = await sess.run({ input: new o.Tensor('float32', inp, [1, 3, th, tw]) }), y4 = await r.output.getData(), P = plane * 16;
+    for (let i = 0, j = 0; i < P; i++, j += 4) { od[j] = y4[i] * 255; od[j + 1] = y4[P + i] * 255; od[j + 2] = y4[2 * P + i] * 255; od[j + 3] = 255; }
+    if (r.output.dispose) r.output.dispose();
+    tx.putImageData(tile, 0, 0);
+    const dx0 = Math.round(ix0 * s), dx1 = Math.round(ix1 * s), dy0 = Math.round(iy0 * s), dy1 = Math.round(iy1 * s);
+    ox.save(); ox.beginPath(); ox.rect(dx0, dy0, dx1 - dx0, dy1 - dy0); ox.clip();
+    ox.drawImage(tc, 0, 0, tw * 4, th * 4, x0 * s, y0 * s, tw * s, th * s); ox.restore();
+    done++;
+    if (onProg && onProg(done / total, (performance.now() - t0) / done * (total - done), ep) === false) throw { code: 'too_slow' };
+    await new Promise(r => setTimeout(r, 0));
+  }
+  return { canvas: out, ep };
+}
+function plainUpscale(img, iw, ih, s) {
+  const c = document.createElement('canvas'); c.width = Math.round(iw * s); c.height = Math.round(ih * s);
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, c.width, c.height);
+  return c;
+}
+// JPG 寫入 300 dpi 資訊，印刷廠打開會直接看到正確尺寸
+function toJpeg(cv, dpi = 300) {
+  return new Promise((res, rej) => cv.toBlob(async b => {
+    if (!b) return rej(new Error('jpeg'));
+    try {
+      const u = new Uint8Array(await b.arrayBuffer());
+      if (u[2] === 0xFF && u[3] === 0xE0 && u[6] === 0x4A && u[7] === 0x46 && u[8] === 0x49 && u[9] === 0x46) { u[13] = 1; u[14] = dpi >> 8; u[15] = dpi & 255; u[16] = dpi >> 8; u[17] = dpi & 255; }
+      res(new Blob([u], { type: 'image/jpeg' }));
+    } catch (e) { res(b); }
+  }, 'image/jpeg', 0.95));
+}
+// 照片在目前版面上的實際解析度（dpi）
+function photoPPI() {
+  const p = state.photo; if (!p) return 0;
+  const o = state.L && state.L.ops.find(o => o.t === 'img' && o.k === 'photo'), b = o || photoSlot();
+  return 25.4 / Math.max(b.w / p.w, b.h / p.h);
+}
+function upMsg(t) { $('#up-stat').textContent = t; if (!$('#aiImg').hidden && state.photo && state.photo.ai) $('#ai-stat').textContent = t; }
+function updUp() {
+  const p = state.photo, busy = !!upJob;
+  $('#up-ai').hidden = !p || busy || !!p.up || photoPPI() >= 280;
+  $('#dl-photo').hidden = !p || busy || !(p.ai || p.up);
+  $('#ai-dlrow').hidden = $('#dl-photo').hidden || !p.ai;
+}
+function upscalePhoto(auto) {
+  const p = state.photo; if (!p || upJob || p.up) return upJob;
+  const ppi = photoPPI();
+  let s = Math.min(clamp(300 / ppi, 1, 4), Math.sqrt(16e6 / (p.w * p.h)));
+  if (s < 1.08) { upMsg(`照片解析度約 ${Math.round(ppi)} dpi，已經夠印刷了，不用放大。`); p.up = 'none'; updUp(); return null; }
+  upJob = (async () => {
+    updUp(); upMsg('準備 AI 放大成印刷解析度…（第一次使用要下載約 3–7 MB）');
+    let cv, how = 'ai', why = '';
+    try {
+      cv = (await srUpscale(p.img, p.w, p.h, s, (f, eta, ep) => {
+        if (ep === 'wasm' && f < 1 && eta > (CONFIG.upscaleMaxWait || 60) * 1000) return false;
+        upMsg(`AI 放大中… ${Math.round(f * 100)}%${eta > 4000 ? `，大約還要 ${Math.ceil(eta / 1000)} 秒` : ''}`);
+      })).canvas;
+    } catch (e) { how = 'plain'; why = e && e.code === 'too_slow' ? 'slow' : 'na'; cv = plainUpscale(p.img, p.w, p.h, s); }
+    if (state.photo !== p) return;
+    const blob = await toJpeg(cv, 300), im = await loadImage(blob);
+    im.ai = p.ai; im.up = how; im.blob = blob;
+    setPic('photo', im);
+    await refresh();
+    upMsg(how === 'ai' ? `已用 AI 放大成 ${cv.width}×${cv.height} 像素（約 ${Math.round(photoPPI())} dpi），印出來會更清楚。` : why === 'slow' ? `這台裝置跑 AI 放大太慢，已改用一般方式放大成 ${cv.width}×${cv.height} 像素。用電腦開會比較快、比較清楚。` : `AI 放大暫時無法使用，已改用一般方式放大成 ${cv.width}×${cv.height} 像素。`);
+  })().finally(() => { upJob = null; updUp(); });
+  return upJob;
+}
+async function upWait(st) {
+  if (!upJob) return;
+  st.textContent = '等照片放大完成，馬上就好…';
+  await upJob.catch(() => null); await refresh();
+}
+async function downloadPhoto() {
+  const p = state.photo; if (!p) return;
+  await upWait($('#up-stat'));
+  const q = state.photo; if (!q) return;
+  let blob = q.up && q.up !== 'none' ? q.blob : null;
+  if (!blob) { const c = document.createElement('canvas'); c.width = q.w; c.height = q.h; c.getContext('2d').drawImage(q.img, 0, 0); blob = await toJpeg(c, 300); }
+  const res = await saveFile(`${fileBase()}_主視覺_${q.w}x${q.h}.jpg`, blob);
+  upMsg(IN_APP && IS_TOP ? '這個 App 的內建瀏覽器擋住了下載，請按最上方黃色區塊的「用瀏覽器開啟」再下載。' : res === 'saved' ? `已下載主視覺原圖（${q.w}×${q.h} 像素，${mb(blob.size)}）。` : SAVE_MSG[res]);
+}
+$('#up-ai').addEventListener('click', () => upscalePhoto(false));
+$('#dl-photo').addEventListener('click', downloadPhoto);
+$('#ai-dl').addEventListener('click', downloadPhoto);
 function setAIMode() {
   const on = !!aiMode;
   $('#aibtn').textContent = on ? 'AI 幫我排 3 種版本' : '幫我推薦 3 種版本';
@@ -1727,8 +1860,10 @@ $('#aibtn').addEventListener('click', async () => {
 });
 $('#undo').addEventListener('click', () => { if (state.undo) { state.text = state.undo; state.undo = null; fillInputs(); schedule(); } $('#undo').hidden = true; });
 $('#pdf').addEventListener('click', async () => {
-  const L = state.L, btn = $('#pdf'), st = $('#dlstat'); if (!L) return;
+  const btn = $('#pdf'), st = $('#dlstat'); if (!state.L) return;
   btn.disabled = true;
+  await upWait(st);
+  const L = state.L;
   try {
     const c = content(), title = state.mode === 'own' && state.design ? state.design.name : (c.brand || c.title.split('\n')[0] || '文宣');
     const r = await buildPDF(L, state.spec.marks, title, (i, n) => { st.textContent = `產生印刷檔中… ${Math.round(i / n * 100)}%`; });
@@ -1750,16 +1885,19 @@ $('#share').addEventListener('click', async () => {
     return;
   }
   btn.disabled = true;
+  await upWait(st);
   try {
-    const c = content(), r = await buildPDF(L, state.spec.marks, c.brand || c.title.split('\n')[0] || '文宣', (i, n) => { st.textContent = `產生印刷檔中… ${Math.round(i / n * 100)}%`; });
-    pdfCache = { L, file: new File([r.blob], `${fileBase()}_${state.spec.w}x${state.spec.h}mm_印刷用.pdf`, { type: 'application/pdf' }) };
+    const L2 = state.L, c = content(), r = await buildPDF(L2, state.spec.marks, c.brand || c.title.split('\n')[0] || '文宣', (i, n) => { st.textContent = `產生印刷檔中… ${Math.round(i / n * 100)}%`; });
+    pdfCache = { L: L2, file: new File([r.blob], `${fileBase()}_${state.spec.w}x${state.spec.h}mm_印刷用.pdf`, { type: 'application/pdf' }) };
     btn.textContent = '檔案好了，點這裡傳送';
     st.textContent = '印刷檔準備好了，再按一次「點這裡傳送」就能選 LINE、Email 或存到檔案。';
   } catch (e) { st.textContent = '產生檔案時出錯了，請再試一次。'; }
   finally { btn.disabled = false; }
 });
 $('#jpg').addEventListener('click', async () => {
-  const L = state.L, st = $('#dlstat'); if (!L) return;
+  const st = $('#dlstat'); if (!state.L) return;
+  await upWait(st);
+  const L = state.L;
   try {
     const blob = await buildJPG(L);
     const res = await saveFile(`${fileBase()}_${state.spec.w}x${state.spec.h}mm_成品圖.jpg`, blob);
@@ -2017,7 +2155,7 @@ document.addEventListener('keydown', e => {
   e.preventDefault();
 });
 buildPickers(); fillInputs(); refresh();
-window.yijian = { state, CONFIG, photoSlot, genSize, layout, layoutOwn, content, buildPDF, buildJPG, refresh, em, setMode, showTab, hitField, hitGroup, groupBoxes, mainLayout, select, undo, wrap, balanced, TEMPLATES, PALETTES, FONTS };
+window.yijian = { state, CONFIG, photoSlot, genSize, srUpscale, upscalePhoto, photoPPI, upBackend, toJpeg, get upJob() { return upJob; }, layout, layoutOwn, content, buildPDF, buildJPG, refresh, em, setMode, showTab, hitField, hitGroup, groupBoxes, mainLayout, select, undo, wrap, balanced, TEMPLATES, PALETTES, FONTS };
 }
 </script>
 </body>

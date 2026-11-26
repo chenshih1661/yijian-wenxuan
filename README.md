@@ -21,6 +21,7 @@
 - 文字自動縮放：內容多就縮小、內容少就放大，主標題自動平均斷行，句號逗號不會跑到行首
 - 上傳主視覺照片、Logo；填網址會自動產生 QR Code
 - AI 生成主視覺（選用）：描述想要的畫面、選 8 種風格（寫實照片、美食攝影、商品棚拍、插畫、水彩、3D 卡通、日系清新、霓虹夜景），依版型照片區比例一次畫 2 張，點一下就放進文宣
+- AI 放大成印刷解析度：選了 AI 圖會自動用 AI 放大到約 300 dpi（補出邊緣和紋理細節），下載 PDF 時自動用放大後的圖，也可以按「下載印刷用原圖」拿到 300 dpi 的 JPG；顧客上傳的低解析照片也有「AI 放大」按鈕
 - 自動檢查：照片解析度不足、文字放不下、QR Code 太小、出血不足
 - 輸出：
   - 印刷用 PDF：成品＋出血，沒有白邊；已設定 TrimBox（成品尺寸）與 BleedBox（出血範圍）；印刷廠要裁切線時再勾選
@@ -66,14 +67,27 @@ AI 的金鑰不能直接寫在網頁裡，不然任何人都能拿去用。做�
 2. 打開 `index.html`，找到 `const CONFIG`，把生圖網址填進去（Worker 網址最後加 `/image`）：
 
    ```js
-   const CONFIG = { aiEndpoint: '', imageEndpoint: 'https://yijian-ai.你的帳號.workers.dev/image', imageCount: 2, imageMaxSide: 1536 };
+   const CONFIG = { aiEndpoint: '', imageEndpoint: 'https://yijian-ai.你的帳號.workers.dev/image', imageCount: 2, imageMaxSide: 1536, ... };
    ```
 
+   （這個專案的 `index.html` 已經填好原作者的 Worker 網址；Worker 只允許原作者的網站呼叫，你自己架的話請換成你的網址。`...` 的其他設定維持預設即可。）
+
 - 使用模型：FLUX.2 [klein] 4B（Apache 2.0 授權，產生的圖可以商用）
-- 費用：Cloudflare 每天給 10,000 Neurons 免費額度（台灣時間每天早上 8 點重置）。一張 1216×720 的圖約用 104、1536×1024 約用 156，一天大約可以畫 60–90 張（每按一次產生 2 張）。**保持免費方案**的話，額度用完只會暫停到隔天，不會扣款；顧客會看到「今天的免費額度用完了」
-- 解析度：依照片區大小產生約 200 dpi 的圖，最大 1536 像素（`imageMaxSide` 可改到 1920，但每張會用比較多額度）。A3 以上的大海報，AI 圖會比較不夠清楚，程式會提醒
+- 費用：Cloudflare 每天給 10,000 Neurons 免費額度（台灣時間每天早上 8 點重置）。依圖的大小，一張約用 50–160（以 512×512 為一格計算，A5 傳單常見的 1216×720 約 156），一天大約可以畫 60 張以上（每按一次產生 2 張）。**保持免費方案**的話，額度用完只會暫停到隔天，不會扣款；顧客會看到「今天的免費額度用完了」
+- 解析度：依照片區大小產生約 200 dpi 的圖，最大 1536 像素（`imageMaxSide` 可改到 1920，但每張會用比較多額度）；顧客選圖後會再自動用 AI 放大到約 300 dpi（見下一節）
 - 每次產生幾張：`imageCount`（1～4）
 - 有接文字 AI 的話，會先請 Claude 把顧客的中文描述改寫成更精準的英文提示詞，效果會更好；沒接也能用中文直接畫
+
+### AI 放大（免費，不用設定）
+
+選了 AI 圖之後，網站會自動把圖放大到印刷需要的約 300 dpi；顧客上傳的照片解析度不夠時，照片旁會出現「AI 放大」按鈕。
+
+- 模型：Real-ESRGAN（realesr-general-x4v3，BSD 3-Clause 授權），放在 `models/realesr-general-x4v3.onnx`，**上傳到 GitHub 時要連 `models` 資料夾一起上傳**
+- 計算在顧客自己的電腦或手機上進行（用 ONNX Runtime Web，從 jsDelivr 載入），不需要伺服器、不花錢、不佔 Cloudflare 額度
+- 支援 WebGPU 的瀏覽器（新版 Chrome、Edge、Safari）用顯示卡算，幾秒到十幾秒；不支援的會用 CPU 算，預估超過 60 秒（`upscaleMaxWait`）就自動改用一般放大，不會卡住
+- 第一次使用要下載約 3–7 MB 的程式與 2.4 MB 的模型，之後瀏覽器會快取
+- 下載 PDF 時如果還在放大，會等放大完成再產生
+- 放大是用 AI 補細節，A4、A3 效果很好；更大的海報近看會有 AI 修飾感
 
 ### 文字 AI（推薦版型、潤飾文案，依用量付費）
 
@@ -123,5 +137,8 @@ AI 的金鑰不能直接寫在網頁裡，不然任何人都能拿去用。做�
 使用到的開源資源：
 
 - 字型：Noto Sans TC、Noto Serif TC、霞鶩文楷 TC（LXGW WenKai TC），皆為 SIL Open Font License，可商用、可嵌入印刷品
+- AI 放大模型：Real-ESRGAN（realesr-general-x4v3），Copyright (c) 2021 Xintao Wang，BSD 3-Clause License（見 `models/LICENSE-Real-ESRGAN.txt`），轉成 ONNX 格式、權重存成半精度
+- AI 放大執行環境：ONNX Runtime Web，Copyright (c) Microsoft Corporation，MIT License（執行時從 jsDelivr 載入）
+- AI 生圖模型：FLUX.2 [klein] 4B，Black Forest Labs，Apache 2.0 License（在 Cloudflare Workers AI 上執行）
 - QR Code 程式庫：qrcode-generator，Copyright (c) 2009 Kazuhiko Arase，MIT License
 - 「QR Code」是 DENSO WAVE INCORPORATED 的註冊商標

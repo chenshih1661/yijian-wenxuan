@@ -28,3 +28,12 @@ Copyright (c) 2009 Kazuhiko Arase
 URL: http://www.d-project.com/
 Licensed under the MIT license (same terms as above).
 The word "QR Code" is a registered trademark of DENSO WAVE INCORPORATED.
+
+---------------------------------------------------------------------------
+Third-party files in the models folder
+
+models/realesr-general-x4v3.onnx
+Converted to ONNX (half-precision weights) from Real-ESRGAN realesr-general-x4v3.
+Copyright (c) 2021, Xintao Wang. All rights reserved.
+Licensed under the BSD 3-Clause License; the full text is in
+models/LICENSE-Real-ESRGAN.txt.
