@@ -11,42 +11,55 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&display=swap">
 <style>
 /* VOICE：印刷廠的打樣工單，俐落可靠；顧客第一次用也看得懂
-   IDEA：印刷打樣——CMYK 色票條、套準記號、裁切線
-   PICTURE：灰色看稿檯上的文宣即時預覽，含出血、裁切線與安全範圍
+   IDEA：印刷打樣——CMYK 色票條、套準記號、裁切線、看稿檯
+   PICTURE：右邊固定的看稿檯，文宣即時預覽，調整時一直看得到
    COLOUR and TYPE：白底深墨，洋紅是唯一強調色；Noto Sans TC 900／700／400
-   LAYOUT：桌機左表單、右預覽（固定不捲走）；手機依序：尺寸、內容、預覽與下載 */
-:root{color-scheme:light dark;--bg:light-dark(#ffffff,#121417);--ink:light-dark(#16181c,#eceef1);--mute:light-dark(#5a606a,#a4aab4);--line:light-dark(#e1e4e8,#2c3037);--mat:light-dark(#eceef1,#1c1f24);--field:light-dark(#f6f7f9,#1a1d22);--acc:light-dark(#d1006f,#ff4fa7);--onacc:light-dark(#ffffff,#22000f);--k:light-dark(#1a1a1a,#f1f1f1)}
+   LAYOUT：桌機左設定（分頁）右預覽（固定）；手機預覽固定在上、下載列固定在下 */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#121417);--ink:light-dark(#16181c,#eceef1);--mute:light-dark(#5a606a,#a4aab4);--line:light-dark(#e1e4e8,#2c3037);--mat:light-dark(#eceef1,#1c1f24);--field:light-dark(#f6f7f9,#1a1d22);--acc:light-dark(#d1006f,#ff4fa7);--onacc:light-dark(#ffffff,#22000f);--k:light-dark(#1a1a1a,#f1f1f1);--pvh:40vh;--pad:max(4vw,16px)}
+@supports(height:1svh){:root{--pvh:40svh}}
+:root.pv-small{--pvh:22vh}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Noto Sans TC","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",sans-serif;overflow-x:clip}
 button,input,textarea{font:inherit;color:inherit}
-.cmyk{display:grid;grid-template-columns:repeat(4,1fr);height:10px}
+.cmyk{display:grid;grid-template-columns:repeat(4,1fr);height:6px}
 .cmyk i:nth-child(1){background:#00a0e9}.cmyk i:nth-child(2){background:#e6007e}.cmyk i:nth-child(3){background:#ffe100}.cmyk i:nth-child(4){background:var(--k)}
-.top{display:flex;gap:16px;align-items:center;padding:clamp(20px,3vw,36px) max(4vw,16px) 14px;max-width:1360px;margin:0 auto}
-.top svg{flex:none;width:52px;height:52px}
-h1{font-size:clamp(32px,5vw,48px);line-height:1.05;font-weight:900;margin:0}
-.lede{margin:6px 0 0;color:var(--mute);max-width:62ch}
-.app{display:grid;grid-template-columns:minmax(0,1fr);column-gap:clamp(24px,3vw,48px);padding:0 max(4vw,16px) 96px;max-width:1360px;margin:0 auto}
-@media(min-width:900px){.app{grid-template-columns:minmax(0,430px) minmax(0,1fr)}.panel{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:0 4px 24px}}
-.step{padding:20px 0 22px;border-top:1px solid var(--line)}
-.proofwrap{padding:20px 0}
-h2{font-size:21px;line-height:1.2;margin:0 0 14px;font-weight:900}
+.inapp{background:#fff1b8;color:#4a3600;padding:12px var(--pad);display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;font-size:15px}
+.inapp p{margin:0;flex:1 1 260px}.inapp .btn{background:#4a3600;color:#fff;border-color:#4a3600;text-decoration:none}
+.app{display:grid;grid-template-columns:minmax(0,1fr)}
+.side{padding:0 var(--pad) 190px}
+.top{display:flex;gap:12px;align-items:center;padding:16px 0 12px}
+.top svg{flex:none;width:38px;height:38px}
+h1{font-size:28px;line-height:1.1;font-weight:900;margin:0}
+.lede{margin:2px 0 0;color:var(--mute);font-size:14px}
+.mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--field);border:1px solid var(--line);border-radius:999px;padding:4px;margin:2px 0 4px}
+.mode button{min-height:42px;border:0;border-radius:999px;background:transparent;font-size:15px;font-weight:700;cursor:pointer;color:var(--mute)}
+.mode button[aria-selected=true]{background:var(--ink);color:var(--bg)}
+.tabs{position:sticky;top:calc(var(--pvh) + 0px);z-index:6;background:var(--bg);display:flex;border-bottom:1px solid var(--line);margin:0 calc(-1 * var(--pad));padding:0 var(--pad)}
+.tabs button{flex:1;min-height:48px;border:0;background:none;font-size:16px;font-weight:700;color:var(--mute);border-bottom:3px solid transparent;cursor:pointer;margin-bottom:-1px}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--acc)}
+.pane{padding:18px 0 8px;scroll-margin-top:calc(var(--pvh) + 56px)}
 h3{font-size:14px;margin:20px 0 8px;color:var(--mute);font-weight:700}
+.pane>h3:first-of-type{margin-top:22px}
 .f{display:block;margin:0 0 14px}
 .f>span{display:block;font-size:14px;font-weight:700;margin-bottom:6px}
 .f>span em{font-style:normal;font-weight:400;color:var(--mute);margin-left:4px}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
 input[type=text],input[type=number],textarea{width:100%;font-size:16px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:46px}
 textarea{resize:vertical;line-height:1.5}
 input:focus,textarea:focus{border-color:var(--ink)}
 :focus-visible{outline:3px solid var(--acc);outline-offset:2px}
-.note{font-size:14px;color:var(--mute);margin:-4px 0 14px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.flash{animation:flash 1.4s ease-out}
+@keyframes flash{0%,40%{box-shadow:0 0 0 4px var(--acc);border-radius:12px}100%{box-shadow:0 0 0 4px transparent}}
+.note{font-size:14px;color:var(--mute);margin:0 0 14px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip,.btn,.ghost{min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.chip,.btn,.ghost{min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
 .chip small{color:var(--mute);font-size:13px;font-variant-numeric:tabular-nums}
 .chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .chip[aria-pressed=true] small{color:inherit;opacity:.7}
 .ghost{background:transparent}
+.next{margin-top:20px;width:100%;font-weight:700;border-color:var(--ink)}
 .dims{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
 .dims .f{margin:0}
 .unit{position:relative}.unit::after{content:"mm";position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--mute);font-size:14px;pointer-events:none}
@@ -59,19 +72,18 @@ input:focus,textarea:focus{border-color:var(--ink)}
 .up b{font-size:14px}
 .pic{height:84px;border-radius:8px;background:var(--field);display:grid;place-items:center;color:var(--mute);font-size:13px;overflow:hidden;text-align:center}
 .pic img{max-width:100%;max-height:84px;object-fit:contain;display:block}
+.pic.tall{height:180px}.pic.tall img{max-height:180px}
 .acts{display:flex;gap:8px;flex-wrap:wrap}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;opacity:0}
-input[type=range]{width:100%;accent-color:var(--acc);min-height:44px}
-.proof{background:var(--mat);border-radius:16px;padding:20px;display:grid;place-items:center;min-height:320px}
-#pv{display:block;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.14),0 12px 32px rgba(0,0,0,.16)}
-.legend{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;font-size:13px;color:var(--mute);margin-top:10px}
-.legend i{display:inline-block;width:18px;border-top:2px solid #e6007e;vertical-align:middle;margin-right:6px}
-.legend i.s{border-top:2px dashed #00a0e9}
-.legend .check{font-size:14px;color:var(--ink);margin-left:auto}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
-.pals{grid-template-columns:repeat(auto-fill,minmax(132px,1fr))}
-.thumb{border:2px solid transparent;border-radius:12px;background:var(--mat);padding:10px 8px 8px;display:grid;gap:6px;justify-items:center;align-content:start;cursor:pointer;font-size:14px;line-height:1.35;text-align:center}
-.thumb .cv{height:112px;display:grid;place-items:center}
+input[type=range]{width:100%;accent-color:var(--acc);min-height:40px}
+.fit{border:0;padding:0;margin:4px 0 12px;display:grid;gap:2px}.fit legend{font-size:14px;font-weight:700;margin-bottom:4px}
+.notes{margin-top:8px;font-size:14px;color:var(--mute)}
+.notes summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--ink);font-weight:700}
+.notes ul{margin:4px 0 0;padding-left:1.2em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.pals{grid-template-columns:repeat(auto-fill,minmax(128px,1fr))}
+.thumb{border:2px solid transparent;border-radius:12px;background:var(--mat);padding:10px 6px 8px;display:grid;gap:6px;justify-items:center;align-content:start;cursor:pointer;font-size:14px;line-height:1.35;text-align:center}
+.thumb .cv{height:104px;display:grid;place-items:center}
 .thumb canvas{display:block;box-shadow:0 1px 3px rgba(0,0,0,.22)}
 .thumb[aria-pressed=true]{border-color:var(--acc)}
 .thumb small{color:var(--mute);font-size:13px}
@@ -80,51 +92,82 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:44px}
 .dots{display:flex;flex:none}.dots i{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.14);margin-left:-5px}.dots i:first-child{margin-left:0}
 .ai{background:var(--field);border-radius:14px;padding:16px}
 .ai textarea{background:var(--bg)}
-.primary{background:var(--acc);color:var(--onacc);border:0;border-radius:999px;min-height:48px;padding:10px 22px;font-size:16px;font-weight:700;cursor:pointer}
+.primary{background:var(--acc);color:var(--onacc);border:0;border-radius:999px;min-height:46px;padding:10px 22px;font-size:16px;font-weight:700;cursor:pointer;white-space:nowrap}
 .primary:disabled{opacity:.55;cursor:progress}
-.status{font-size:14px;color:var(--mute);margin:10px 0 0;min-height:1.4em}
-.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
+.status{font-size:14px;color:var(--mute);margin:8px 0 0;min-height:1.4em}
+.status:empty{min-height:0;margin:0}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:12px}
 .opts:empty{display:none}
 .opts .thumb{background:var(--bg)}
-.warns{list-style:none;padding:0;margin:0 0 12px;display:grid;gap:8px}
-.warns li{background:light-dark(#fff4d6,#3a2f10);color:light-dark(#5c4300,#ffe3a1);border-radius:10px;padding:10px 12px;font-size:14px}
-.warns li.ok{background:light-dark(#e5f6ec,#123222);color:light-dark(#11512e,#b6f0cd)}
-.spec{font-size:15px;margin:0 0 14px;font-variant-numeric:tabular-nums}
-.dl{display:flex;flex-wrap:wrap;gap:10px}
-details{margin-top:16px;font-size:14px;color:var(--mute)}
-summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--ink);font-weight:700}
-details ul{margin:4px 0 0;padding-left:1.2em}
-.inapp{background:#fff1b8;color:#4a3600;padding:12px max(4vw,16px);display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;font-size:15px}
-.inapp p{margin:0;flex:1 1 260px}
-.inapp .btn{background:#4a3600;color:#fff;border-color:#4a3600;text-decoration:none}
-.mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--field);border:1px solid var(--line);border-radius:999px;padding:4px;margin:4px 0 18px}
-.mode button{min-height:44px;border:0;border-radius:999px;background:transparent;font-size:16px;font-weight:700;cursor:pointer;color:var(--mute)}
-.mode button[aria-selected=true]{background:var(--ink);color:var(--bg)}
-.pic.tall{height:180px}.pic.tall img{max-height:180px}
-.fit{border:0;padding:0;margin:4px 0 12px;display:grid;gap:2px}.fit legend{font-size:14px;font-weight:700;margin-bottom:4px}
-.adj{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0 16px}
+.adj{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:0 16px}
 .sl>span{display:flex!important;justify-content:space-between}.sl output{font-weight:400;color:var(--mute);font-variant-numeric:tabular-nums}
 .lab{display:block;font-size:14px;font-weight:700;margin-bottom:6px}
 .cl{display:inline-flex;align-items:center;gap:8px;font-size:15px}.cl input{width:52px;height:40px;border:1px solid var(--line);border-radius:8px;background:none;padding:2px}
 #dbg{width:72px;height:44px;border:1px solid var(--line);border-radius:8px;background:none;padding:2px}
-.marks{margin-top:8px;font-size:14px}.marks em{font-style:normal;color:var(--mute)}
-.fab{position:fixed;right:16px;bottom:16px;background:var(--ink);color:var(--bg);text-decoration:none;border-radius:999px;padding:12px 18px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:5}
-.fab[hidden]{display:none}
-@media(min-width:900px){.fab{display:none}}
+/* 預覽台 */
+.stage{order:-1;position:sticky;top:0;align-self:start;z-index:8;height:var(--pvh);background:var(--mat);display:flex;flex-direction:column;padding:8px var(--pad) 4px;border-bottom:1px solid var(--line)}
+.proof{flex:1;min-height:0;display:grid;place-items:center;padding:4px}
+#pv{display:block;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.14),0 10px 28px rgba(0,0,0,.16);cursor:default}
+.legend{display:flex;flex-wrap:wrap;gap:2px 14px;align-items:center;font-size:12px;color:var(--mute);min-height:34px}
+.legend i{display:inline-block;width:16px;border-top:2px solid #e6007e;vertical-align:middle;margin-right:5px}
+.legend i.s{border-top:2px dashed #00a0e9}
+.legend .check{font-size:13px;color:var(--ink);min-height:34px;margin-left:auto}
+.legend .check input{width:16px;height:16px}
+.mini{min-height:34px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);font-size:13px;cursor:pointer}
+.hint{display:none}
+/* 下載列：手機固定在底部 */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:12;background:var(--bg);border-top:1px solid var(--line);padding:8px var(--pad) calc(8px + env(safe-area-inset-bottom));box-shadow:0 -8px 24px rgba(0,0,0,.1);display:grid;gap:6px}
+.checks summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;min-height:32px}
+.checks summary::-webkit-details-marker{display:none}
+#checkSum{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;background:#1e9e5a}
+.checks.warn .dot{background:#e0a100}
+.warns{list-style:none;padding:0;margin:4px 0 4px;display:grid;gap:6px;max-height:28vh;overflow:auto}
+.warns li{background:light-dark(#fff4d6,#3a2f10);color:light-dark(#5c4300,#ffe3a1);border-radius:10px;padding:8px 12px;font-size:14px}
+.warns li.ok{background:light-dark(#e5f6ec,#123222);color:light-dark(#11512e,#b6f0cd)}
+.dl{display:flex;gap:8px}
+.dl .primary{flex:1 1 auto}
+.dl .ghost{flex:0 1 auto;padding:8px 12px}
+.barfoot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 12px}
+.spec{font-size:12px;color:var(--mute);margin:0;font-variant-numeric:tabular-nums}
+.outspec{font-size:14px;margin:-4px 0 4px;font-variant-numeric:tabular-nums}
+.mute{font-style:normal;color:var(--mute);font-size:14px}
+@media(max-width:999px){.barfoot{display:none}.bar{gap:4px;padding-top:6px}.checks summary{font-size:13px;min-height:28px}.side{padding-bottom:130px}}
+.marks{font-size:13px;min-height:32px}.marks em{font-style:normal;color:var(--mute)}
+.marks input{width:16px;height:16px}
+@media(min-width:1000px){
+ :root{--pvh:100vh;--pad:36px}
+ .app{grid-template-columns:minmax(400px,500px) minmax(0,1fr)}
+ .side{padding:0 32px 64px 40px}
+ .tabs{top:0;margin:0 -32px 0 -40px;padding:0 32px 0 40px}
+ .pane{scroll-margin-top:60px}
+ .stage{order:0;height:100vh;padding:20px 28px 16px;border-bottom:0;border-left:1px solid var(--line)}
+ .proof{padding:12px}
+ .hint{display:inline}
+ #collapse{display:none}
+ .bar{position:static;box-shadow:none;border:0;background:transparent;padding:8px 0 0}
+ .dl .primary{flex:0 1 auto;padding:10px 28px}
+ #pv.edit{cursor:pointer}
+}
+@media(min-width:1000px) and (max-height:700px){.legend .hint{display:none}}
+@media(prefers-reduced-motion:reduce){.flash{animation:none;outline:3px solid var(--acc)}}
 </style>
 </head>
 <body>
 <div class="cmyk" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 <div class="inapp" id="inapp" hidden><p id="inappMsg"></p><a class="btn" id="inappOpen" href="#">用瀏覽器開啟</a></div>
-<header class="top">
-<svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="15" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="26" cy="26" r="6.5" fill="currentColor"/><path d="M26 2v48M2 26h48" stroke="currentColor" stroke-width="2.5"/></svg>
-<div><h1>一鍵文宣</h1><p class="lede">輸入尺寸和內容自動排版，或上傳自己做好的設計，下載印刷廠可以直接印的 PDF。</p></div>
-</header>
 <main class="app">
-<section aria-label="填寫資料">
+<section class="side" aria-label="設定">
+ <header class="top">
+  <svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="15" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="26" cy="26" r="6.5" fill="currentColor"/><path d="M26 2v48M2 26h48" stroke="currentColor" stroke-width="2.5"/></svg>
+  <div><h1>一鍵文宣</h1><p class="lede">填內容自動排版，或上傳自己的設計，下載可直接印刷的 PDF。</p></div>
+ </header>
  <div class="mode" role="tablist" aria-label="製作方式"><button type="button" role="tab" id="mode-auto" aria-selected="true">自動排版</button><button type="button" role="tab" id="mode-own" aria-selected="false">上傳我的設計</button></div>
- <div class="step">
-  <h2>尺寸</h2>
+ <nav class="tabs" id="tabs" role="tablist" aria-label="設定分頁">
+  <button type="button" role="tab" data-tab="size" aria-selected="true">尺寸</button><button type="button" role="tab" data-tab="content" aria-selected="false">內容</button><button type="button" role="tab" data-tab="layout" aria-selected="false">版型</button><button type="button" role="tab" data-tab="adjust" aria-selected="false">微調</button>
+ </nav>
+
+ <div class="pane" id="pane-size" role="tabpanel">
   <div class="chips" id="presets"></div>
   <div class="dims">
    <label class="f"><span>寬</span><span class="unit"><input type="number" id="w" inputmode="decimal" min="20" max="5000" step="0.5"></span></label>
@@ -132,47 +175,56 @@ details ul{margin:4px 0 0;padding-left:1.2em}
    <label class="f"><span>出血</span><span class="unit"><input type="number" id="bleed" inputmode="decimal" min="0" max="10" step="0.5"></span></label>
   </div>
   <div class="row"><button type="button" class="btn" id="swap">直式／橫式互換</button><button type="button" class="btn" id="fitRatio" hidden>照我的設計調整尺寸</button></div>
+  <p class="note">最大 5000 × 5000 mm。出血一般填 3 mm，印刷廠另有要求時再改。</p>
+  <p class="outspec" id="spec2"></p>
+  <label class="check"><input type="checkbox" id="marks2">加印刷廠裁切線<em class="mute">（四周會有白邊，一般不用勾）</em></label>
+  <details class="notes"><summary>給印刷廠的檔案說明</summary><ul>
+   <li>PDF 就是「成品＋四邊出血」的大小，沒有白邊；已設定成品尺寸（TrimBox）與出血範圍（BleedBox）。</li>
+   <li>印刷廠要求裁切線時，再勾選預覽下方的「加裁切線」。</li>
+   <li>解析度 300 dpi；超大尺寸會自動調低，預覽下方會顯示實際數值。</li>
+   <li>文字和圖片一起轉成高解析影像，印刷廠不需要另外安裝字型。</li>
+   <li>色彩為 RGB，印刷廠轉成 CMYK 時，特別鮮豔的藍、綠、螢光色會略暗一些。</li>
+  </ul></details>
+  <button type="button" class="btn next" data-go="content">下一步：內容</button>
  </div>
- <div class="step" id="step-own" hidden>
-  <h2>我的設計</h2>
-  <p class="note"><span>上傳已經做好的設計（JPG、PNG 或 PDF），程式會幫你補出血、轉成印刷檔。用 Canva 的話，選「下載 → PDF 列印」或 PNG。</span></p>
-  <div class="up"><div class="pic tall" id="pic-design">還沒選檔案</div><div class="acts"><label class="btn">選擇檔案<input class="sr" type="file" accept="image/*,application/pdf,.pdf" id="in-design"></label></div></div>
-  <p class="status" id="designStat" aria-live="polite"></p>
-  <fieldset class="fit"><legend>這個檔案是…</legend>
-   <label class="check"><input type="radio" name="fit" value="trim" checked>剛好是成品尺寸，沒有出血（自動補出血）</label>
-   <label class="check"><input type="radio" name="fit" value="bleed">已經含出血</label>
-   <label class="check"><input type="radio" name="fit" value="contain">比例不合，完整保留不裁切（空白處補底色）</label>
-  </fieldset>
-  <label class="f" id="dbgRow" hidden><span>底色<em>預設取設計邊緣的顏色</em></span><input type="color" id="dbg" value="#ffffff"></label>
-  <label class="f" id="dfocusRow" hidden><span>裁切位置<em>比例不合時，拉這裡決定保留哪一邊</em></span><input type="range" id="dfocus" min="0" max="100" value="50"></label>
- </div>
- <div class="step" id="step-content">
-  <h2>內容</h2>
-  <p class="note"><span>已先填好示範內容，請改成你的。空白的欄位不會出現在文宣上。</span><button type="button" class="ghost" id="clear">清空示範內容</button></p>
-  <label class="f"><span>店名／品牌</span><input type="text" id="t-brand"></label>
-  <label class="f"><span>主標題<em>按 Enter 可以換行</em></span><textarea id="t-title" rows="2"></textarea></label>
-  <label class="f"><span>副標題</span><input type="text" id="t-sub"></label>
-  <label class="f"><span>醒目標語<em>例如 開幕首週限定、全館特價</em></span><input type="text" id="t-hi"></label>
-  <label class="f"><span>大字價格／折扣<em>例如 5折、$199、買一送一</em></span><input type="text" id="t-price"></label>
-  <label class="f"><span>行動呼籲<em>例如 立即預約、掃碼領券</em></span><input type="text" id="t-cta"></label>
-  <label class="f"><span>內容重點<em>一行一點</em></span><textarea id="t-points" rows="4"></textarea></label>
-  <label class="f"><span>活動資訊<em>時間、地點</em></span><textarea id="t-info" rows="2"></textarea></label>
-  <label class="f"><span>聯絡方式<em>地址、電話、LINE</em></span><textarea id="t-contact" rows="2"></textarea></label>
-  <label class="f"><span>QR Code 連結<em>網址或 LINE 連結，會自動變成 QR Code</em></span><input type="text" id="t-qr" inputmode="url" autocapitalize="off" spellcheck="false"></label>
-  <div class="ups">
-   <div class="up"><b>主視覺照片</b><div class="pic" id="pic-photo">還沒選照片</div><div class="acts"><label class="btn">選照片<input class="sr" type="file" accept="image/*" id="in-photo"></label><button type="button" class="ghost" id="del-photo" hidden>移除</button></div></div>
-   <div class="up"><b>Logo</b><div class="pic" id="pic-logo">還沒選 Logo</div><div class="acts"><label class="btn">選 Logo<input class="sr" type="file" accept="image/*" id="in-logo"></label><button type="button" class="ghost" id="del-logo" hidden>移除</button></div></div>
+
+ <div class="pane" id="pane-content" role="tabpanel" hidden>
+  <div id="step-own" hidden>
+   <p class="note">上傳已經做好的設計（JPG、PNG 或 PDF），程式會幫你補出血、轉成印刷檔。用 Canva 的話，選「下載 → PDF 列印」或 PNG。</p>
+   <div class="up"><div class="pic tall" id="pic-design">還沒選檔案</div><div class="acts"><label class="btn">選擇檔案<input class="sr" type="file" accept="image/*,application/pdf,.pdf" id="in-design"></label></div></div>
+   <p class="status" id="designStat" aria-live="polite"></p>
+   <fieldset class="fit"><legend>這個檔案是…</legend>
+    <label class="check"><input type="radio" name="fit" value="trim" checked>剛好是成品尺寸，沒有出血（自動補出血）</label>
+    <label class="check"><input type="radio" name="fit" value="bleed">已經含出血</label>
+    <label class="check"><input type="radio" name="fit" value="contain">比例不合，完整保留不裁切（空白處補底色）</label>
+   </fieldset>
+   <label class="f" id="dbgRow" hidden><span>底色<em>預設取設計邊緣的顏色</em></span><input type="color" id="dbg" value="#ffffff"></label>
+   <label class="f" id="dfocusRow" hidden><span>裁切位置<em>比例不合時，拉這裡決定保留哪一邊</em></span><input type="range" id="dfocus" min="0" max="100" value="50"></label>
   </div>
-  <label class="f" id="focusRow" hidden><span>照片裁切位置<em>重點被裁掉時拉這裡</em></span><input type="range" id="focus" min="0" max="100" value="50"></label>
+  <div id="step-content">
+   <p class="note"><span>已先填好示範內容，請改成你的。空白的欄位不會出現在文宣上。點預覽上的文字，也可以直接跳到那一格。</span><button type="button" class="ghost" id="clear">清空示範內容</button></p>
+   <label class="f"><span>店名／品牌</span><input type="text" id="t-brand"></label>
+   <label class="f"><span>主標題<em>按 Enter 可以換行</em></span><textarea id="t-title" rows="2"></textarea></label>
+   <label class="f"><span>副標題</span><input type="text" id="t-sub"></label>
+   <div class="two">
+    <label class="f"><span>大字價格／折扣<em>例如 5折、$199</em></span><input type="text" id="t-price"></label>
+    <label class="f"><span>醒目標語<em>例如 開幕首週限定</em></span><input type="text" id="t-hi"></label>
+   </div>
+   <label class="f"><span>行動呼籲<em>例如 立即預約、掃碼領券</em></span><input type="text" id="t-cta"></label>
+   <label class="f"><span>內容重點<em>一行一點</em></span><textarea id="t-points" rows="4"></textarea></label>
+   <label class="f"><span>活動資訊<em>時間、地點</em></span><textarea id="t-info" rows="2"></textarea></label>
+   <label class="f"><span>聯絡方式<em>地址、電話、LINE</em></span><textarea id="t-contact" rows="2"></textarea></label>
+   <label class="f"><span>QR Code 連結<em>網址或 LINE 連結，會自動變成 QR Code</em></span><input type="text" id="t-qr" inputmode="url" autocapitalize="off" spellcheck="false"></label>
+   <div class="ups">
+    <div class="up" id="up-photo"><b>主視覺照片</b><div class="pic" id="pic-photo">還沒選照片</div><div class="acts"><label class="btn">選照片<input class="sr" type="file" accept="image/*" id="in-photo"></label><button type="button" class="ghost" id="del-photo" hidden>移除</button></div></div>
+    <div class="up" id="up-logo"><b>Logo</b><div class="pic" id="pic-logo">還沒選 Logo</div><div class="acts"><label class="btn">選 Logo<input class="sr" type="file" accept="image/*" id="in-logo"></label><button type="button" class="ghost" id="del-logo" hidden>移除</button></div></div>
+   </div>
+   <label class="f" id="focusRow" hidden><span>照片裁切位置<em>重點被裁掉時拉這裡</em></span><input type="range" id="focus" min="0" max="100" value="50"></label>
+  </div>
+  <button type="button" class="btn next" data-go="layout" id="nextLayout">下一步：選版型</button>
  </div>
-</section>
-<section class="panel" id="panel" aria-label="預覽與下載">
- <div class="proofwrap">
-  <div class="proof" id="proof"><canvas id="pv" role="img" aria-label="文宣預覽"></canvas></div>
-  <div class="legend"><span><i></i>裁切位置</span><span><i class="s"></i>文字安全範圍</span><span>淡紅色會被裁掉</span><label class="check"><input type="checkbox" id="guides" checked>顯示參考線</label></div>
- </div>
- <div class="step" id="step-layout">
-  <h2>版面</h2>
+
+ <div class="pane" id="pane-layout" role="tabpanel" hidden>
   <div class="ai">
    <label class="f"><span>想要的感覺</span><textarea id="vibe" rows="2" placeholder="例如：溫暖、手作感，像巷弄咖啡店"></textarea></label>
    <label class="check" id="polishRow" hidden><input type="checkbox" id="polish">順便潤飾標題和文案（價格、日期、地址不會改）</label>
@@ -180,11 +232,14 @@ details ul{margin:4px 0 0;padding-left:1.2em}
    <p class="status" id="aistat" aria-live="polite">依照「想要的感覺」推薦版型和配色。</p>
    <div class="opts" id="opts"></div>
   </div>
-  <h3>版型・廣告促銷</h3><div class="grid tgrid" id="thumbs-ad"></div>
-  <h3>版型・簡約質感</h3><div class="grid tgrid" id="thumbs-classic"></div>
+  <h3>廣告促銷</h3><div class="grid tgrid" id="thumbs-ad"></div>
+  <h3>簡約質感</h3><div class="grid tgrid" id="thumbs-classic"></div>
   <h3>配色</h3><div class="grid pals" id="pals"></div>
   <h3>字型</h3><div class="chips" id="fonts"></div>
-  <h3>微調</h3>
+  <button type="button" class="btn next" data-go="adjust">下一步：微調</button>
+ </div>
+
+ <div class="pane" id="pane-adjust" role="tabpanel" hidden>
   <div class="adj">
    <label class="f sl"><span>標題大小<output id="o-title">100%</output></span><input type="range" id="a-title" min="70" max="150" step="5" value="100"></label>
    <label class="f sl"><span>價格大小<output id="o-price">100%</output></span><input type="range" id="a-price" min="70" max="150" step="5" value="100"></label>
@@ -196,24 +251,19 @@ details ul{margin:4px 0 0;padding-left:1.2em}
   <div class="row colors" id="colorRow" hidden><label class="cl">主色<input type="color" id="a-p" value="#e60012"></label><label class="cl">強調色<input type="color" id="a-a" value="#ffe100"></label></div>
   <div class="row"><button type="button" class="ghost" id="a-reset">微調恢復預設</button></div>
  </div>
- <div class="step">
-  <h2>下載</h2>
-  <ul class="warns" id="warns" aria-live="polite"></ul>
-  <p class="spec" id="spec"></p>
-  <div class="dl"><button type="button" class="primary" id="pdf">下載印刷用 PDF</button><button type="button" class="ghost" id="share" hidden>傳送 PDF（LINE、Email…）</button><button type="button" class="ghost" id="jpg">下載成品圖 JPG</button></div>
-  <label class="check marks"><input type="checkbox" id="marks">加印刷廠裁切線<em>（四周會多出白邊，一般不用勾）</em></label>
+</section>
+
+<section class="stage" id="stage" aria-label="預覽與下載">
+ <div class="proof" id="proof"><canvas id="pv" role="img" aria-label="文宣預覽"></canvas></div>
+ <div class="legend"><span><i></i>裁切</span><span><i class="s"></i>文字安全範圍</span><span class="hint">點文字可直接修改</span><label class="check"><input type="checkbox" id="guides" checked>參考線</label><button type="button" class="mini" id="collapse">縮小預覽</button></div>
+ <div class="bar">
+  <details class="checks" id="checks"><summary><span class="dot" aria-hidden="true"></span><span id="checkSum"></span></summary><ul class="warns" id="warns" aria-live="polite"></ul></details>
+  <div class="dl"><button type="button" class="primary" id="pdf">下載印刷 PDF</button><button type="button" class="ghost" id="jpg">成品圖 JPG</button><button type="button" class="ghost" id="share" hidden>傳送 PDF</button></div>
+  <div class="barfoot"><span class="spec" id="spec"></span><label class="check marks"><input type="checkbox" id="marks">加裁切線<em>（四周會有白邊）</em></label></div>
   <p class="status" id="dlstat" aria-live="polite"></p>
-  <details><summary>給印刷廠的檔案說明</summary><ul>
-   <li>PDF 就是「成品＋四邊出血」的大小，沒有白邊；已設定成品尺寸（TrimBox）與出血範圍（BleedBox）。</li>
-   <li>印刷廠要求裁切線時，再勾選「加印刷廠裁切線」。</li>
-   <li>解析度 300 dpi；超大海報會自動調低，上方規格會顯示實際數值。</li>
-   <li>文字和圖片一起轉成高解析影像，印刷廠不需要另外安裝字型。</li>
-   <li>色彩為 RGB，印刷廠轉成 CMYK 時，特別鮮豔的藍、綠、螢光色會略暗一些。</li>
-  </ul></details>
  </div>
 </section>
 </main>
-<a class="fab" id="fab" href="#panel" hidden>看預覽・下載</a>
 <script>/* qrcode-generator 1.4.4 · MIT License · Copyright (c) 2009 Kazuhiko Arase */
 var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}(function(){return qrcode});</script>
 <script>
@@ -266,6 +316,18 @@ const NO_START = new Set([...'，。、！？：；」』）》〉】…—～,.
 const NO_END = new Set([...'「『（《〈【([{']);
 const TOK = /[A-Za-z0-9À-ɏ@#&$%+\-_.\/:'’]+|\s+|[\s\S]/gu;
 const isSp = t => /^\s+$/.test(t);
+const CJK = /[\u3400-\u9FFF\uF900-\uFAFF]/;
+// 有空格的中文，把空格隔開的詞當成一個單位；太短的詞（如「折」「元起」）黏到前一個
+function phrases(para) {
+  const out = [];
+  for (const p of para.split(/(\s+)/).filter(x => x !== '')) {
+    if (isSp(p)) { out.push(p); continue; }
+    const n = [...p].length, pi = out.length - 2;
+    const glue = pi >= 0 && isSp(out[out.length - 1]) && (n === 1 || (n <= 2 && CJK.test(p) && /\d$/.test(out[pi])));
+    if (glue) { const sp = out.pop(); out[out.length - 1] += sp + p; } else out.push(p);
+  }
+  return out;
+}
 function wrap(text, size, wt, fk, maxW) {
   const out = [];
   for (const para of String(text).split('\n')) {
@@ -276,24 +338,31 @@ function wrap(text, size, wt, fk, maxW) {
       out.push({ s: line.map(x => x.t).join(''), w: Math.max(0, lw) });
       line = []; lw = 0;
     };
-    for (const t of para.match(TOK) || []) {
+    const handle = (t, phrase) => {
       const w = em(t, wt, fk) * size;
-      if (!line.length && isSp(t)) continue;
-      if (lw + w <= maxW + 1e-6) { add(t, w); continue; }
-      if (line.length && NO_START.has(t)) { add(t, w); continue; }
-      if (isSp(t)) { push(); continue; }
+      if (phrase && w > maxW) { for (const st of t.match(TOK) || []) handle(st, false); return; }
+      if (!line.length && isSp(t)) return;
+      if (lw + w <= maxW + 1e-6) { add(t, w); return; }
+      if (line.length && NO_START.has(t)) { add(t, w); return; }
+      if (isSp(t)) { push(); return; }
       const carry = [];
       while (line.length > 1 && NO_END.has(line[line.length - 1].t)) { const x = line.pop(); lw -= x.w; carry.unshift(x); }
       if (line.length) push();
       for (const x of carry) add(x.t, x.w);
-      if (lw + w <= maxW + 1e-6) { add(t, w); continue; }
+      if (lw + w <= maxW + 1e-6) { add(t, w); return; }
+      if (phrase) { for (const st of t.match(TOK) || []) handle(st, false); return; }
       for (const ch of t) { const cw = em(ch, wt, fk) * size; if (line.length && lw + cw > maxW) push(); add(ch, cw); }
-    }
+    };
+    const usePhrase = /\s/.test(para.trim()) && CJK.test(para);
+    for (const t of (usePhrase ? phrases(para) : para.match(TOK)) || []) handle(t, usePhrase && !isSp(t));
     push();
   }
   return out;
 }
 function balanced(text, size, wt, fk, maxW) {
+  return String(text).split('\n').flatMap(p => balance1(p, size, wt, fk, maxW));
+}
+function balance1(text, size, wt, fk, maxW) {
   const base = wrap(text, size, wt, fk, maxW);
   if (base.length < 2) return base;
   let lo = maxW * 0.45, hi = maxW, best = base;
@@ -358,7 +427,7 @@ function stack(L, box, list, o) {
     const it = r.it;
     if (it.space != null) { L.slots[it.key] = { x: box.x, y, w: box.w, h: it.space }; y += r.h + r.gap; continue; }
     const lineH = r.size * r.lh, top = (r.lh - 1) * r.size / 2;
-    const fx = it.fx ? { sk: it.fx.sk, sw: (it.fx.sw || 0) * r.size, sh: it.fx.sh, glow: it.fx.glow } : null;
+    const fx = Object.assign({ k: it.key }, it.fx ? { sk: it.fx.sk, sw: (it.fx.sw || 0) * r.size, sh: it.fx.sh, glow: it.fx.glow } : {});
     if (it.pill) {
       const mlw = Math.max(...r.lines.map(l => l.w)), ar = it.arrow ? r.size * 0.9 : 0;
       const pw = Math.min(box.w, mlw + 2 * r.px + ar);
@@ -384,7 +453,7 @@ function stack(L, box, list, o) {
 function photo(L, box, c, o = {}) {
   if (!c.photo) return decor(L, box, o);
   const p = c.photo;
-  L.ops.push({ t: 'img', img: p.img, small: p.small, iw: p.w, ih: p.h, x: box.x, y: box.y, w: box.w, h: box.h, r: o.r || 0, circle: !!o.circle, f: c.focus });
+  L.ops.push({ t: 'img', k: 'photo', img: p.img, small: p.small, iw: p.w, ih: p.h, x: box.x, y: box.y, w: box.w, h: box.h, r: o.r || 0, circle: !!o.circle, f: c.focus });
   const ppi = 25.4 / Math.max(box.w / p.w, box.h / p.h);
   const need = L.u > 400 ? 100 : 150;
   if (ppi < need) L.warn(`照片解析度約 ${Math.round(ppi)} dpi，印出來可能會模糊，建議換解析度更高的照片（這個尺寸建議 ${need} dpi 以上）。`);
@@ -393,7 +462,7 @@ function photo(L, box, c, o = {}) {
 function decor(L, b, o = {}) {
   const P = L.pal, n = Math.min(b.w, b.h);
   L.ops.push({ t: 'clip', x: b.x, y: b.y, w: b.w, h: b.h, r: o.r || 0, circle: !!o.circle });
-  R(L, b.x, b.y, b.w, b.h, P.s);
+  R(L, b.x, b.y, b.w, b.h, P.s); L.ops[L.ops.length - 1].k = 'photo';
   C(L, b.x + b.w * 0.8, b.y + b.h * 0.3, n * 0.6, P.p);
   C(L, b.x + b.w * 0.16, b.y + b.h * 0.95, n * 0.42, P.a);
   ring(L, b.x + b.w * 0.42, b.y + b.h * 0.42, n * 0.16, n * 0.03, P.ink, 0.85);
@@ -414,10 +483,10 @@ function brandTag(L, x, y, h, c, o) {
   const w = 2 * pad + lw + gap + tw;
   if (o.bg) R(L, x, y, w, h, o.bg, h / 2);
   if (c.logo) {
-    L.ops.push({ t: 'img', img: c.logo.img, small: c.logo.small, iw: c.logo.w, ih: c.logo.h, x: x + pad, y: y + (h - ih) / 2, w: lw, h: ih, fit: 'contain' });
+    L.ops.push({ t: 'img', k: 'logo', img: c.logo.img, small: c.logo.small, iw: c.logo.w, ih: c.logo.h, x: x + pad, y: y + (h - ih) / 2, w: lw, h: ih, fit: 'contain' });
     if (25.4 / Math.max(lw / c.logo.w, ih / c.logo.h) < 150) L.warn('Logo 解析度偏低，印出來可能有鋸齒，建議用更大的 Logo 檔。');
   }
-  if (brand) txt(L, brand, x + pad + lw + gap, y + (h - size) / 2, size, F.bold, o.ink);
+  if (brand) txt(L, brand, x + pad + lw + gap, y + (h - size) / 2, size, F.bold, o.ink, { k: 'brand' });
   return { w, h };
 }
 const qrCache = new Map();
@@ -430,7 +499,7 @@ function qrMatrix(d) {
 }
 function qrOp(L, x, y, s, data) {
   if (!qrMatrix(data)) { L.warn('QR Code 內容太長，請改用短一點的連結。'); return; }
-  L.ops.push({ t: 'qr', data, x, y, s, fg: '#111111', bg: '#FFFFFF' });
+  L.ops.push({ t: 'qr', k: 'qr', data, x, y, s, fg: '#111111', bg: '#FFFFFF' });
   if (s < 12.5) L.warn('QR Code 小於 13 mm，部分手機可能掃不到。');
 }
 const qrSize = L => clamp(L.u * 0.12, 13, 70);
@@ -438,18 +507,18 @@ const footH = (L, c) => Math.max(clamp(L.u * 0.12, 8, 110), c.qr ? qrSize(L) : 0
 function footer(L, box, c, o) {
   let tw = box.w;
   if (c.qr) { const q = Math.min(box.h, qrSize(L)); qrOp(L, box.x + box.w - q, box.y + (box.h - q) / 2, q, c.qr); tw -= q + L.m * 0.6; }
-  if (c.contact) stack(L, { x: box.x, y: box.y, w: tw, h: box.h }, [{ text: c.contact, f: 1, w: FONTS[L.font].body, c: o.ink, lh: 1.4 }], { kmax: clamp(L.u * 0.028, 2.6, 18) * L.adj.body, kmin: L.minText, valign: 'center', lock: true });
+  if (c.contact) stack(L, { x: box.x, y: box.y, w: tw, h: box.h }, [{ key: 'contact', text: c.contact, f: 1, w: FONTS[L.font].body, c: o.ink, lh: 1.4 }], { kmax: clamp(L.u * 0.028, 2.6, 18) * L.adj.body, kmin: L.minText, valign: 'center', lock: true });
 }
 function blocks(L, c, o) {
   const F = FONTS[L.font], A = L.adj;
   return {
-    title: { text: c.title, f: A.title, w: F.head, c: o.title, lh: 1.18, gap: 0.34, balance: true, min: 4, fx: o.titleFx },
-    sub: { text: c.sub, f: 0.4 * A.body, w: F.bold, c: o.sub, gap: 0.5, fx: o.subFx },
-    price: { text: c.price, f: (o.priceF || 1.25) * A.price, w: F.head, c: o.price || o.title, lh: 1.04, gap: 0.42, balance: true, min: 4, fx: o.priceFx },
-    hi: { text: c.hi, f: 0.42 * A.body, w: F.head, c: o.hiInk, pill: { bg: o.hiBg, sk: o.hiSk }, lh: 1.25, gap: 0.55, balance: true },
-    points: { text: c.points, f: 0.31 * A.body, w: F.body, c: o.body, list: !o.center, bs: o.bs, bc: o.bullet, lh: 1.5, gap: 0.42, fx: o.bodyFx },
-    info: { text: c.info, f: 0.3 * A.body, w: F.bold, c: o.body, lh: 1.5, gap: 0.45, fx: o.bodyFx },
-    cta: { text: c.cta, f: 0.44 * A.body, w: F.head, c: o.ctaInk || '#FFFFFF', pill: { bg: o.ctaBg || o.title, sk: o.ctaSk }, arrow: true, lh: 1.2, gap: 0.3, balance: true }
+    title: { key: 'title', text: c.title, f: A.title, w: F.head, c: o.title, lh: 1.18, gap: 0.34, balance: true, min: 4, fx: o.titleFx },
+    sub: { key: 'sub', text: c.sub, f: 0.4 * A.body, w: F.bold, c: o.sub, gap: 0.5, fx: o.subFx },
+    price: { key: 'price', text: c.price, f: (o.priceF || 1.25) * A.price, w: F.head, c: o.price || o.title, lh: 1.04, gap: 0.42, balance: true, min: 4, fx: o.priceFx },
+    hi: { key: 'hi', text: c.hi, f: 0.42 * A.body, w: F.head, c: o.hiInk, pill: { bg: o.hiBg, sk: o.hiSk }, lh: 1.25, gap: 0.55, balance: true },
+    points: { key: 'points', text: c.points, f: 0.31 * A.body, w: F.body, c: o.body, list: !o.center, bs: o.bs, bc: o.bullet, lh: 1.5, gap: 0.42, fx: o.bodyFx },
+    info: { key: 'info', text: c.info, f: 0.3 * A.body, w: F.bold, c: o.body, lh: 1.5, gap: 0.45, fx: o.bodyFx },
+    cta: { key: 'cta', text: c.cta, f: 0.44 * A.body, w: F.head, c: o.ctaInk || '#FFFFFF', pill: { bg: o.ctaBg || o.title, sk: o.ctaSk }, arrow: true, lh: 1.2, gap: 0.3, balance: true }
   };
 }
 
@@ -473,7 +542,7 @@ function badge(L, cx, cy, r, text, o) {
   if (o.shape === 'circle') { C(L, cx, cy, r, o.bg); if (o.sk) ring(L, cx, cy, r, r * 0.05, o.sk); ring(L, cx, cy, r * 0.84, r * 0.025, o.ink, 0.7); }
   else poly(L, starPts(cx, cy, r, r * 0.82, o.n || 16), o.bg, 1, o.sk || null, o.sk ? r * 0.04 : 0);
   const side = r * 1.18;
-  stack(L, { x: cx - side / 2, y: cy - side / 2, w: side, h: side }, [{ text, f: 1, w: FONTS[L.font].head, c: o.ink, lh: 1.05, balance: true, min: L.minText, fx: o.fx }], { kmax: r * 0.62 * Math.min(L.adj.price, 1.25), kmin: L.minText, valign: 'center', align: 'center', lock: true });
+  stack(L, { x: cx - side / 2, y: cy - side / 2, w: side, h: side }, [{ key: o.key, text, f: 1, w: FONTS[L.font].head, c: o.ink, lh: 1.05, balance: true, min: L.minText, fx: o.fx }], { kmax: r * 0.62 * Math.min(L.adj.price, 1.25), kmin: L.minText, valign: 'center', align: 'center', lock: true });
   pop(L);
 }
 // 斜放的相片（白框＋影子）
@@ -496,13 +565,13 @@ function showcase(L, b, c, text, o) {
   else if (text) badge(L, b.x + b.w / 2, b.y + b.h / 2, Math.min(b.h * 0.5, b.w * 0.45), text, o.badge);
 }
 // 斜貼膠帶，重複文字（超出邊緣的部分是裝飾）
-function tapeBand(L, cx, cy, len, th, deg, bg, ink, text) {
+function tapeBand(L, cx, cy, len, th, deg, bg, ink, text, k) {
   push(L, cx, cy, deg);
   R(L, cx - len / 2, cy - th / 2, len, th, bg);
   R(L, cx - len / 2, cy - th / 2 + th * 0.06, len, th * 0.05, ink);
   R(L, cx - len / 2, cy + th / 2 - th * 0.11, len, th * 0.05, ink);
   const F = FONTS[L.font], size = th * 0.5, unit = text.replace(/\s*\n\s*/g, ' ') + '　・　', uw = em(unit, F.head, L.font) * size;
-  if (uw > 0) for (let x = cx - len / 2 - uw * 0.3; x < cx + len / 2; x += uw) L.ops.push({ t: 'text', s: unit, x, y: cy - size / 2, size, w: F.head, c: ink, fk: L.font, deco: true });
+  if (uw > 0) for (let x = cx - len / 2 - uw * 0.3; x < cx + len / 2; x += uw) L.ops.push({ t: 'text', k, s: unit, x, y: cy - size / 2, size, w: F.head, c: ink, fk: L.font, deco: true });
   pop(L);
 }
 
@@ -514,7 +583,7 @@ const TEMPLATES = {
     rays(L, W * 0.5, H * 0.45, Math.hypot(W, H), 32, P.op, 0.1);
     const { top, bottom } = chrome(L, c, { brandBg: '#FFFFFF', brandInk: P.ink, footBg: P.bg, footInk: P.ink });
     const B = blocks(L, c, { title: P.op, titleFx: { sk: P.ink, sw: 0.08, sh: P.ink }, sub: P.op, subFx: { sk: P.ink, sw: 0.1 }, hiBg: P.ink, hiInk: '#FFFFFF', body: P.op, bodyFx: { sk: P.ink, sw: 0.12 }, bullet: P.a, ctaBg: P.a, ctaInk: P.oa, ctaSk: P.ink });
-    const bt = c.price || c.hi, bo = { badge: { bg: P.a, ink: P.oa, sk: P.ink, rot: -10 } }, kmax = clamp(u * 0.15, 5, 130), av = bottom - top;
+    const bt = c.price || c.hi, bo = { badge: { key: c.price ? 'price' : 'hi', bg: P.a, ink: P.oa, sk: P.ink, rot: -10 } }, kmax = clamp(u * 0.15, 5, 130), av = bottom - top;
     const seq = [B.title, B.sub, c.price ? B.hi : null, B.points, B.info, B.cta];
     if (L.orient === 'land') {
       const cw = S.w * pf(L, 0.4);
@@ -563,7 +632,7 @@ const TEMPLATES = {
     const big = c.price || c.hi || c.title, av = bottom - top;
     const B = blocks(L, c, { title: P.ink, sub: P.p, hiBg: P.p, hiInk: P.op, body: P.ink, bullet: P.p, ctaBg: P.ink, ctaInk: '#FFFFFF' });
     const rest = [big === c.title ? null : B.title, B.sub, c.price && c.hi ? B.hi : null, B.points, B.info, B.cta];
-    const bigItem = { text: big, f: big === c.title ? L.adj.title : L.adj.price, w: FONTS[L.font].head, c: P.p, lh: 1.02, balance: true, min: 4, fx: { sk: '#FFFFFF', sw: 0.05, sh: P.ink } };
+    const bigItem = { key: big === c.price ? 'price' : big === c.hi ? 'hi' : 'title', text: big, f: big === c.title ? L.adj.title : L.adj.price, w: FONTS[L.font].head, c: P.p, lh: 1.02, balance: true, min: 4, fx: { sk: '#FFFFFF', sw: 0.05, sh: P.ink } };
     const drawBig = sl => {
       C(L, sl.x + sl.w / 2, sl.y + sl.h / 2, Math.min(sl.w, sl.h) * 0.5, P.a);
       stack(L, { x: sl.x + sl.w * 0.02, y: sl.y, w: sl.w * 0.96, h: sl.h }, [bigItem], { kmax: sl.h * 0.8 * Math.min(L.adj.price, 1.2), kmin: 4, valign: 'center', align: 'center', lock: true });
@@ -589,7 +658,7 @@ const TEMPLATES = {
     const inner = { x: S.x + m * 0.2, y: S.y + m * 0.2, w: S.w - m * 0.4, h: S.h - m * 0.4 };
     const stub = !!(c.qr || c.contact), nr = u * 0.035, dash = [u * 0.018, u * 0.012];
     const B = blocks(L, c, { title: P.ink, sub: P.ink, price: P.p, priceFx: { sh: P.a }, hiBg: P.a, hiInk: P.oa, body: P.ink, center: true, ctaBg: P.p, ctaInk: P.op });
-    const main = [c.brand ? { text: c.brand.replace(/\n/g, ' '), f: 0.24, w: F.bold, c: P.p, gap: 0.35 } : null, B.title, B.sub, B.price, B.hi, { ...B.points, f: 0.26 * L.adj.body }, { ...B.info, f: 0.26 * L.adj.body }, B.cta];
+    const main = [c.brand ? { key: 'brand', text: c.brand.replace(/\n/g, ' '), f: 0.24, w: F.bold, c: P.p, gap: 0.35 } : null, B.title, B.sub, B.price, B.hi, { ...B.points, f: 0.26 * L.adj.body }, { ...B.info, f: 0.26 * L.adj.body }, B.cta];
     let mb = inner;
     if (stub && land) {
       const dx = inner.x + inner.w * 0.7;
@@ -599,7 +668,7 @@ const TEMPLATES = {
       const sb = { x: dx + m * 0.6, y: inner.y, w: inner.x + inner.w - dx - m * 0.6, h: inner.h };
       const q = c.qr ? Math.min(sb.w, qrSize(L), sb.h * 0.6) : 0;
       if (q) qrOp(L, sb.x + (sb.w - q) / 2, sb.y + (c.contact ? 0 : (sb.h - q) / 2), q, c.qr);
-      if (c.contact) stack(L, { x: sb.x, y: sb.y + q + (q ? m * 0.4 : 0), w: sb.w, h: sb.h - q - (q ? m * 0.4 : 0) }, [{ text: c.contact, f: 1, w: F.body, c: P.ink, lh: 1.4 }], { kmax: clamp(u * 0.028, 2.6, 18), kmin: L.minText, valign: q ? 'top' : 'center', align: 'center', lock: true });
+      if (c.contact) stack(L, { x: sb.x, y: sb.y + q + (q ? m * 0.4 : 0), w: sb.w, h: sb.h - q - (q ? m * 0.4 : 0) }, [{ key: 'contact', text: c.contact, f: 1, w: F.body, c: P.ink, lh: 1.4 }], { kmax: clamp(u * 0.028, 2.6, 18), kmin: L.minText, valign: q ? 'top' : 'center', align: 'center', lock: true });
     } else if (stub) {
       const fh = footH(L, c), dy = inner.y + inner.h - fh - m * 0.5;
       C(L, card.x, dy, nr, P.p); C(L, card.x + card.w, dy, nr, P.p);
@@ -643,7 +712,7 @@ const TEMPLATES = {
     const { top, bottom } = chrome(L, c, { brandBg: '#FFFFFF', brandInk: P.ink, footBg: '#FFFFFF', footInk: P.ink, footSk: P.ink, footSkW: sw * 1.5 });
     const av = bottom - top, tail = u * 0.05;
     const B = blocks(L, c, { title: P.ink, sub: P.p, hiBg: P.ink, hiInk: '#FFFFFF', body: P.oa, bullet: P.ink, ctaBg: P.p, ctaInk: P.op, ctaSk: P.ink });
-    const bt = c.price || c.hi, bo = { badge: { bg: P.p, ink: P.op, sk: P.ink, rot: 9, n: 14 }, sk: P.ink };
+    const bt = c.price || c.hi, bo = { badge: { key: c.price ? 'price' : 'hi', bg: P.p, ink: P.op, sk: P.ink, rot: 9, n: 14 }, sk: P.ink };
     const bub = { x: S.x, y: top, w: land ? S.w * 0.56 : S.w, h: av * (land ? 0.5 : 0.34) - tail };
     box4(L, bub, '#FFFFFF', u * 0.035, P.ink, sw);
     const tx = bub.x + bub.w * 0.2;
@@ -687,15 +756,15 @@ const TEMPLATES = {
     const pw = land ? T.x + T.w * pf(L, 0.48) : W, ph = land ? H : T.y + T.h * pf(L, 0.36);
     if (c.photo) photo(L, { x: 0, y: 0, w: pw, h: ph }, c); else { R(L, 0, 0, pw, ph, P.p); stripes(L, { x: 0, y: 0, w: pw, h: ph }, u * 0.06, P.op, 0.1); }
     brandTag(L, S.x, S.y, clamp(u * 0.07, 5, 28), c, { bg: '#FFFFFF', ink: P.ink, maxW: land ? pw - S.x - m : S.w * 0.8 });
-    const tt = c.hi || c.price || c.brand || (c.title || '').split('\n')[0];
+    const tt = c.hi || c.price || c.brand || (c.title || '').split('\n')[0], tk = c.hi ? 'hi' : c.price ? 'price' : c.brand ? 'brand' : 'title';
     const th = clamp(u * 0.075, 5, 60), len = Math.hypot(W, H) * 1.2;
     let textTop, tx = S.x, tw = S.w;
     if (!land) {
-      if (tt) { tapeBand(L, W / 2, ph, len, th, -7, P.a, P.oa, tt); tapeBand(L, W / 2, ph + th * 0.55, len, th * 0.8, 4, P.ink, '#FFFFFF', c.cta || c.price || tt); }
+      if (tt) { tapeBand(L, W / 2, ph, len, th, -7, P.a, P.oa, tt, tk); tapeBand(L, W / 2, ph + th * 0.55, len, th * 0.8, 4, P.ink, '#FFFFFF', c.cta || c.price || tt, c.cta ? 'cta' : c.price ? 'price' : tk); }
       textTop = ph + (tt ? th * 0.95 + Math.tan(7 * Math.PI / 180) * W / 2 : 0) + m * 0.6;
     } else {
       const cy = T.y + T.h * 0.16;
-      if (tt) tapeBand(L, W / 2, cy, len, th, -4, P.a, P.oa, tt);
+      if (tt) tapeBand(L, W / 2, cy, len, th, -4, P.a, P.oa, tt, tk);
       tx = pw + m; tw = S.x + S.w - tx;
       textTop = Math.max(S.y, tt ? cy + th / 2 + Math.tan(4 * Math.PI / 180) * W / 2 + m * 0.5 : S.y);
     }
@@ -797,9 +866,9 @@ const TEMPLATES = {
     stack(L, box, [
       d ? { space: d, key: 'ph', gap: 0.45 } : null,
       lg ? { space: lg, key: 'logo', gap: 0.25 } : null,
-      c.brand ? { text: c.brand.replace(/\n/g, ' '), f: 0.24, w: F.bold, c: P.p, gap: 0.35 } : null,
+      c.brand ? { key: 'brand', text: c.brand.replace(/\n/g, ' '), f: 0.24, w: F.bold, c: P.p, gap: 0.35 } : null,
       B.title, B.sub, B.price, B.hi, { ...B.points, f: 0.28 * L.adj.body }, { ...B.info, f: 0.28 * L.adj.body, gap: 0.45 }, B.cta,
-      c.contact ? { text: c.contact, f: 0.24, w: F.body, c: P.ink, lh: 1.45, gap: 0.4 } : null,
+      c.contact ? { key: 'contact', text: c.contact, f: 0.24, w: F.body, c: P.ink, lh: 1.45, gap: 0.4 } : null,
       q ? { space: q, key: 'qr', gap: 0 } : null
     ], { kmax: clamp(u * 0.12, 5, 100), kmin: 3.2, valign: 'center', align: 'center' });
     const sl = L.slots;
@@ -1126,7 +1195,7 @@ function buildPickers() {
   $('#fonts').innerHTML = Object.entries(FONTS).map(([k, f]) => `<button type="button" class="chip" data-f="${k}" aria-pressed="false" style="font-family:${f.fam.replace(/"/g, "'")}">${f.n}</button>`).join('');
 }
 function fillInputs() {
-  $('#w').value = state.spec.w; $('#h').value = state.spec.h; $('#bleed').value = state.spec.bleed; $('#marks').checked = state.spec.marks;
+  $('#w').value = state.spec.w; $('#h').value = state.spec.h; $('#bleed').value = state.spec.bleed; $('#marks').checked = $('#marks2').checked = state.spec.marks;
   for (const k of FIELDS) $('#t-' + k).value = state.text[k] || '';
   $('#vibe').value = state.vibe;
   for (const k of ['title', 'price', 'body', 'photo']) { const v = Math.round(state.adj[k] * 100); $('#a-' + k).value = v; $('#o-' + k).textContent = v + '%'; }
@@ -1144,13 +1213,14 @@ function markPickers() {
   document.querySelectorAll('#a-align .chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.al === state.adj.align));
   document.querySelectorAll('#opts .thumb').forEach(b => { const o = state.opts[b.dataset.o]; b.setAttribute('aria-pressed', !!o && o.template === state.style.template && o.palette === state.style.palette && o.font === state.style.font); });
 }
-let lastW = 0;
+let lastW = 0, lastH = 0;
 function drawPreview() {
   const L = state.L; if (!L) return;
   const cv = $('#pv'), box = $('#proof');
   const mk = state.spec.marks ? MARK : 0, MW = L.W + 2 * mk, MH = L.H + 2 * mk;
-  lastW = box.clientWidth;
-  const aw = Math.max(120, box.clientWidth - 40), ah = Math.max(280, innerHeight * (innerWidth >= 900 ? 0.6 : 0.56));
+  const cs = getComputedStyle(box);
+  lastW = box.clientWidth; lastH = box.clientHeight;
+  const aw = Math.max(60, box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)), ah = Math.max(60, box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
   const k = Math.min(aw / MW, ah / MH), dpr = Math.min(2, devicePixelRatio || 1), s = k * dpr;
   cv.style.width = MW * k + 'px'; cv.style.height = MH * k + 'px';
   cv.width = Math.round(MW * s); cv.height = Math.round(MH * s);
@@ -1179,12 +1249,15 @@ function thumbTo(cv, L, size) {
 function showInfo(L) {
   const { w, h, bleed, marks } = state.spec;
   const dpi = Math.round(exportScale(L) * 25.4);
-  $('#spec').textContent = `成品 ${w} × ${h} mm・PDF ${w + 2 * bleed} × ${h + 2 * bleed} mm（含出血）・${dpi} dpi・${marks ? '含裁切線' : '無白邊'}`;
+  $('#spec').textContent = `成品 ${w}×${h} mm・PDF ${w + 2 * bleed}×${h + 2 * bleed} mm（含出血）・${dpi} dpi・${marks ? '含裁切線' : '無白邊'}`;
+  $('#spec2').textContent = `輸出：PDF ${w + 2 * bleed} × ${h + 2 * bleed} mm（含出血）・${dpi} dpi・${marks ? '含裁切線' : '沒有白邊'}`;
   const ul = $('#warns'); ul.textContent = '';
   const warns = [...L.warns];
   if (dpi < 100) warns.push(`這個尺寸會輸出約 ${dpi} dpi，適合遠看的大圖（帆布、看板、背板）；近看會比較模糊。`);
   const okMsg = L.own ? (L.empty ? '請先上傳你的設計。' : '已自動補好出血。請確認重要文字都在藍色虛線內，就可以下載印刷。') : '檢查通過：文字都在安全範圍內，可以下載印刷。';
   for (const t of warns.length ? warns : [okMsg]) { const li = document.createElement('li'); li.textContent = t; if (!warns.length) li.className = 'ok'; ul.append(li); }
+  $('#checks').className = 'checks ' + (warns.length ? 'warn' : 'ok');
+  $('#checkSum').textContent = warns.length ? `${warns.length} 個提醒：${warns[0]}` : okMsg;
 }
 function drawOpts(c) {
   const host = $('#opts');
@@ -1263,7 +1336,7 @@ function readSpec() {
   return true;
 }
 ['w', 'h', 'bleed'].forEach(id => $('#' + id).addEventListener('input', () => { if (readSpec()) schedule(); }));
-$('#marks').addEventListener('change', e => { state.spec.marks = e.target.checked; schedule(); });
+for (const id of ['#marks', '#marks2']) $(id).addEventListener('change', e => { state.spec.marks = e.target.checked; $('#marks').checked = $('#marks2').checked = e.target.checked; schedule(); });
 $('#guides').addEventListener('change', e => { state.guides = e.target.checked; drawPreview(); });
 $('#swap').addEventListener('click', () => { const { w, h } = state.spec; state.spec.w = h; state.spec.h = w; fillInputs(); schedule(); });
 FIELDS.forEach(k => $('#t-' + k).addEventListener('input', e => { state.text[k] = e.target.value; schedule(); }));
@@ -1395,7 +1468,10 @@ $('#jpg').addEventListener('click', async () => {
 function setMode(m, quiet) {
   state.mode = m;
   $('#mode-auto').setAttribute('aria-selected', m === 'auto'); $('#mode-own').setAttribute('aria-selected', m === 'own');
-  $('#step-own').hidden = m !== 'own'; $('#step-content').hidden = m === 'own'; $('#step-layout').hidden = m === 'own';
+  $('#step-own').hidden = m !== 'own'; $('#step-content').hidden = m === 'own'; $('#nextLayout').hidden = m === 'own';
+  $('#tabs [data-tab=content]').textContent = m === 'own' ? '我的設計' : '內容';
+  for (const k of ['layout', 'adjust']) $(`#tabs [data-tab=${k}]`).hidden = m === 'own';
+  if (m === 'own' && (curTab === 'layout' || curTab === 'adjust')) showTab('content');
   $('#fitRatio').hidden = !(m === 'own' && state.design);
   if (!quiet) schedule();
 }
@@ -1479,11 +1555,51 @@ $('#a-custom').addEventListener('change', e => {
 $('#a-p').addEventListener('input', e => { state.adj.p = e.target.value; state.adj.touched = true; schedule(); });
 $('#a-a').addEventListener('input', e => { state.adj.a = e.target.value; state.adj.touched = true; schedule(); });
 $('#a-reset').addEventListener('click', () => { state.adj = { ...ADJ0 }; fillInputs(); schedule(); });
-new ResizeObserver(() => { if ($('#proof').clientWidth !== lastW) drawPreview(); }).observe($('#proof'));
-const fab = $('#fab');
-new IntersectionObserver(([en]) => { fab.hidden = en.isIntersecting; }, { threshold: 0.02 }).observe($('#panel'));
+new ResizeObserver(() => { const b = $('#proof'); if (b.clientWidth !== lastW || b.clientHeight !== lastH) drawPreview(); }).observe($('#proof'));
+/* ===== 分頁 ===== */
+let curTab = 'size';
+function showTab(t, scroll = true) {
+  curTab = t;
+  for (const b of document.querySelectorAll('#tabs [data-tab]')) { const on = b.dataset.tab === t; b.setAttribute('aria-selected', on); $('#pane-' + b.dataset.tab).hidden = !on; }
+  const pane = $('#pane-' + t), tabs = $('#tabs');
+  if (scroll && pane.getBoundingClientRect().top < tabs.getBoundingClientRect().bottom + 4) pane.scrollIntoView({ block: 'start' });
+}
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) showTab(b.dataset.tab); });
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.go)));
+$('#collapse').addEventListener('click', () => { const small = document.documentElement.classList.toggle('pv-small'); $('#collapse').textContent = small ? '放大預覽' : '縮小預覽'; });
+/* ===== 點預覽上的東西，跳到對應欄位 ===== */
+function hitField(L, x, y) {
+  const tfs = []; let hit = null;
+  for (const o of L.ops) {
+    if (o.t === 'push') { tfs.push(o); continue; }
+    if (o.t === 'pop') { tfs.pop(); continue; }
+    if (!o.k) continue;
+    let px = x, py = y;
+    for (const t of tfs) { const dx = px - t.px, dy = py - t.py, c = Math.cos(-t.rot), s = Math.sin(-t.rot); px = t.px + dx * c - dy * s; py = t.py + dx * s + dy * c; }
+    const bw = o.t === 'text' ? em(o.s, o.w, o.fk) * o.size : o.t === 'qr' ? o.s : o.w, bh = o.t === 'text' ? o.size : o.t === 'qr' ? o.s : o.h;
+    if (px >= o.x - 1 && px <= o.x + bw + 1 && py >= o.y - 1 && py <= o.y + bh + 1) hit = o.k;
+  }
+  return hit;
+}
+function pvPoint(e) {
+  const L = state.L, r = $('#pv').getBoundingClientRect(), mk = state.spec.marks ? MARK : 0;
+  return [(e.clientX - r.left) / r.width * (L.W + 2 * mk) - mk, (e.clientY - r.top) / r.height * (L.H + 2 * mk) - mk];
+}
+function editField(k) {
+  showTab('content', false);
+  const el = k === 'photo' ? $('#up-photo') : k === 'logo' ? $('#up-logo') : $('#t-' + k);
+  if (!el) return;
+  const box = el.closest('.f') || el;
+  box.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  if (el.matches('input,textarea')) el.focus({ preventScroll: true });
+  box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
+  box.addEventListener('animationend', () => box.classList.remove('flash'), { once: true });
+}
+$('#pv').addEventListener('click', e => { const L = state.L; if (!L || L.own) return; const k = hitField(L, ...pvPoint(e)); if (k) editField(k); });
+let hoverRaf = 0;
+$('#pv').addEventListener('mousemove', e => { if (hoverRaf) return; hoverRaf = requestAnimationFrame(() => { hoverRaf = 0; const L = state.L; $('#pv').classList.toggle('edit', !!(L && !L.own && hitField(L, ...pvPoint(e)))); }); });
 buildPickers(); fillInputs(); refresh();
-window.yijian = { state, layout, layoutOwn, content, buildPDF, buildJPG, refresh, em, setMode, TEMPLATES, PALETTES, FONTS };
+window.yijian = { state, layout, layoutOwn, content, buildPDF, buildJPG, refresh, em, setMode, showTab, hitField, wrap, balanced, TEMPLATES, PALETTES, FONTS };
 }
 </script>
 </body>
