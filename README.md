@@ -20,6 +20,7 @@
 - 欄位：店名、主標題、副標題、醒目標語、大字價格／折扣、行動呼籲、內容重點、活動資訊、聯絡方式、QR Code
 - 文字自動縮放：內容多就縮小、內容少就放大，主標題自動平均斷行，句號逗號不會跑到行首
 - 上傳主視覺照片、Logo；填網址會自動產生 QR Code
+- AI 生成主視覺（選用）：描述想要的畫面、選 8 種風格（寫實照片、美食攝影、商品棚拍、插畫、水彩、3D 卡通、日系清新、霓虹夜景），依版型照片區比例一次畫 2 張，點一下就放進文宣
 - 自動檢查：照片解析度不足、文字放不下、QR Code 太小、出血不足
 - 輸出：
   - 印刷用 PDF：成品＋出血，沒有白邊；已設定 TrimBox（成品尺寸）與 BleedBox（出血範圍）；印刷廠要裁切線時再勾選
@@ -47,22 +48,41 @@ Facebook、Instagram 的內建瀏覽器也不能下載，頁面上方會出現�
 
 ## 接上 AI（選用）
 
-AI 的金鑰不能直接寫在網頁裡，不然任何人都能拿去用。做法是架一個小小的中繼服務（Cloudflare Workers 免費方案就夠）：
+AI 的金鑰不能直接寫在網頁裡，不然任何人都能拿去用。做法是架一個小小的中繼服務（Cloudflare Workers，免費方案就夠）。同一個 Worker 可以同時負責「AI 生圖」和「文字 AI」，兩個都是選用。
 
-1. 到 https://console.anthropic.com 申請 API 金鑰（依使用量付費）
-2. 到 Cloudflare 建立一個 Worker，把 `worker.js` 的內容整個貼上，按 Deploy
-3. 在 Worker 的「Settings → Variables and Secrets」新增：
-   - `ANTHROPIC_API_KEY`：你的金鑰（選「Secret」類型）
-   - `ALLOW_ORIGIN`：你的網址，例如 `https://你的帳號.github.io`（只讓你的網站呼叫）
-4. 打開 `index.html`，找到這一行，把 Worker 的網址填進去：
+### 第一步：建立 Worker（兩種 AI 都要）
+
+1. 申請 Cloudflare 帳號（免費）：https://dash.cloudflare.com/sign-up
+2. 左邊選「Workers & Pages」→「Create」→「Create Worker」，名稱例如 `yijian-ai`，按 Deploy
+3. 按「Edit code」，把 `worker.js` 的內容整個貼上取代，按 Deploy
+4. 回到 Worker 的「Settings → Variables and Secrets」新增 `ALLOW_ORIGIN`：你的網址，例如 `https://你的帳號.github.io`（只讓你的網站呼叫）
+5. 記下 Worker 的網址，例如 `https://yijian-ai.你的帳號.workers.dev`
+
+### AI 生圖（免費額度）
+
+顧客在「內容」分頁的主視覺照片旁按「AI 生成」，輸入想要的畫面、選風格，就會依版型照片區的比例畫 2 張圖讓顧客挑。
+
+1. 在 Worker 的「Settings → Bindings」按「Add binding」→「Workers AI」，變數名稱填 `AI`，儲存後重新 Deploy
+2. 打開 `index.html`，找到 `const CONFIG`，把生圖網址填進去（Worker 網址最後加 `/image`）：
 
    ```js
-   const CONFIG = { aiEndpoint: 'https://你的worker名稱.你的帳號.workers.dev' };
+   const CONFIG = { aiEndpoint: '', imageEndpoint: 'https://yijian-ai.你的帳號.workers.dev/image', imageCount: 2, imageMaxSide: 1536 };
    ```
 
-5. 建議在 Cloudflare 加上流量限制（Rate limiting），避免被人大量呼叫產生費用
+- 使用模型：FLUX.2 [klein] 4B（Apache 2.0 授權，產生的圖可以商用）
+- 費用：Cloudflare 每天給 10,000 Neurons 免費額度（台灣時間每天早上 8 點重置）。一張 1216×720 的圖約用 104、1536×1024 約用 156，一天大約可以畫 60–90 張（每按一次產生 2 張）。**保持免費方案**的話，額度用完只會暫停到隔天，不會扣款；顧客會看到「今天的免費額度用完了」
+- 解析度：依照片區大小產生約 200 dpi 的圖，最大 1536 像素（`imageMaxSide` 可改到 1920，但每張會用比較多額度）。A3 以上的大海報，AI 圖會比較不夠清楚，程式會提醒
+- 每次產生幾張：`imageCount`（1～4）
+- 有接文字 AI 的話，會先請 Claude 把顧客的中文描述改寫成更精準的英文提示詞，效果會更好；沒接也能用中文直接畫
 
-沒有接 AI 也能完整使用，只是「推薦 3 種版本」改用關鍵字判斷。
+### 文字 AI（推薦版型、潤飾文案，依用量付費）
+
+1. 到 https://console.anthropic.com 申請 API 金鑰（依使用量付費）
+2. 在 Worker 的「Settings → Variables and Secrets」新增 `ANTHROPIC_API_KEY`：你的金鑰（選「Secret」類型）
+3. 在 `index.html` 的 `CONFIG` 把 `aiEndpoint` 填成 Worker 網址（最後不用加 `/image`）
+4. 建議在 Cloudflare 加上流量限制（Rate limiting），避免被人大量呼叫產生費用
+
+沒有接 AI 也能完整使用：「AI 生成」按鈕不會出現，「推薦 3 種版本」改用關鍵字判斷。
 
 ## 給印刷廠的檔案規格
 

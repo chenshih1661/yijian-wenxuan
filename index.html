@@ -107,6 +107,18 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:40px}
 /* 預覽台 */
 .stage{order:-1;position:sticky;top:0;align-self:start;z-index:8;height:var(--pvh);background:var(--mat);display:flex;flex-direction:column;padding:8px var(--pad) 4px;border-bottom:1px solid var(--line)}
 .proof{flex:1;min-height:0;display:grid;place-items:center;padding:4px}
+.aiimg{border:1px solid var(--line);border-radius:14px;padding:4px 14px 14px;margin:12px 0;background:var(--bg)}
+.row.tight{margin-top:4px}
+.aigrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.aigrid:empty{display:none}
+.aigrid>*{border-radius:10px;overflow:hidden;max-height:300px}
+.aigrid button{padding:0;border:3px solid transparent;background:var(--field);cursor:pointer;display:block;width:100%}
+.aigrid button[aria-pressed=true]{border-color:var(--acc)}
+.aigrid img{display:block;width:100%;height:100%;object-fit:cover}
+.aigrid .sk{background:linear-gradient(90deg,var(--field) 20%,var(--line) 50%,var(--field) 80%);background-size:200% 100%;animation:sk 1.3s linear infinite}
+.aigrid .fail{display:grid;place-items:center;background:var(--field);color:var(--mute);font-size:13px;padding:8px;text-align:center}
+@keyframes sk{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.aigrid .sk{animation:none}}
 .ebox{border:1px solid var(--line);border-radius:14px;padding:4px 14px 12px;margin:4px 0 8px;background:var(--bg)}
 .ebox h3{margin-top:12px;color:inherit}
 .ehint{font-size:14px;line-height:1.6;color:var(--mute);margin:4px 0 8px}
@@ -225,8 +237,17 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:40px}
    <label class="f"><span>聯絡方式<em>地址、電話、LINE</em></span><textarea id="t-contact" rows="2"></textarea></label>
    <label class="f"><span>QR Code 連結<em>網址或 LINE 連結，會自動變成 QR Code</em></span><input type="text" id="t-qr" inputmode="url" autocapitalize="off" spellcheck="false"></label>
    <div class="ups">
-    <div class="up" id="up-photo"><b>主視覺照片</b><div class="pic" id="pic-photo">還沒選照片</div><div class="acts"><label class="btn">選照片<input class="sr" type="file" accept="image/*" id="in-photo"></label><button type="button" class="ghost" id="del-photo" hidden>移除</button></div></div>
+    <div class="up" id="up-photo"><b>主視覺照片</b><div class="pic" id="pic-photo">還沒選照片</div><div class="acts"><label class="btn">選照片<input class="sr" type="file" accept="image/*" id="in-photo"></label><button type="button" class="ghost" id="ai-open" hidden aria-expanded="false">AI 生成</button><button type="button" class="ghost" id="del-photo" hidden>移除</button></div></div>
     <div class="up" id="up-logo"><b>Logo</b><div class="pic" id="pic-logo">還沒選 Logo</div><div class="acts"><label class="btn">選 Logo<input class="sr" type="file" accept="image/*" id="in-logo"></label><button type="button" class="ghost" id="del-logo" hidden>移除</button></div></div>
+   </div>
+   <div class="aiimg" id="aiImg" hidden>
+    <div class="selhead"><b>AI 生成主視覺</b><button type="button" class="ghost sm" id="ai-close">收起</button></div>
+    <label class="f"><span>想要什麼畫面？<em>寫主角、場景、光線、顏色，越具體越好</em></span><textarea id="ai-desc" rows="3" placeholder="例如：木頭桌上一杯拿鐵和剛出爐的可頌，早晨陽光從窗戶照進來"></textarea></label>
+    <div class="row tight"><button type="button" class="ghost sm" id="ai-idea">依文宣內容幫我想</button></div>
+    <span class="lab">風格</span><div class="chips" id="ai-style"></div>
+    <div class="row"><button type="button" class="primary" id="ai-go">產生 2 張</button><span class="ehint" id="ai-size"></span></div>
+    <p class="status" id="ai-stat" aria-live="polite"></p>
+    <div class="aigrid" id="ai-out"></div>
    </div>
    <label class="f" id="focusRow" hidden><span>照片裁切位置<em>重點被裁掉時拉這裡</em></span><input type="range" id="focus" min="0" max="100" value="50"></label>
   </div>
@@ -294,7 +315,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script>
 {
 /* ===== 設定：自架時把 aiEndpoint 改成你的 AI 服務網址（見 README） ===== */
-const CONFIG = { aiEndpoint: '' };
+const CONFIG = { aiEndpoint: '', imageEndpoint: '', imageCount: 2, imageMaxSide: 1536 };
 
 const $ = s => document.querySelector(s);
 /* ===== LINE 等 App 內建瀏覽器不能下載檔案：LINE 自動改用手機瀏覽器開啟 ===== */
@@ -1527,23 +1548,142 @@ function loadImage(file) {
     img.src = url;
   });
 }
+function setPic(kind, im) {
+  const pic = $('#pic-' + kind);
+  if (state[kind]) URL.revokeObjectURL(state[kind].url);
+  state[kind] = im;
+  const el = document.createElement('img'); el.src = im.url; el.alt = kind === 'photo' ? '已選的照片' : '已選的 Logo';
+  pic.textContent = ''; pic.append(el); $('#del-' + kind).hidden = false;
+  if (kind === 'photo') $('#focusRow').hidden = false;
+  schedule();
+}
 for (const kind of ['photo', 'logo']) {
   const pic = $('#pic-' + kind), del = $('#del-' + kind), empty = pic.textContent;
   $('#in-' + kind).addEventListener('change', async e => {
     const file = e.target.files && e.target.files[0]; if (!file) return;
     try {
-      const im = await loadImage(file);
-      if (state[kind]) URL.revokeObjectURL(state[kind].url);
-      state[kind] = im;
-      const el = document.createElement('img'); el.src = im.url; el.alt = kind === 'photo' ? '已選的照片' : '已選的 Logo';
-      pic.textContent = ''; pic.append(el); del.hidden = false;
-      if (kind === 'photo') $('#focusRow').hidden = false;
-      schedule();
+      setPic(kind, await loadImage(file));
+      if (kind === 'photo') document.querySelectorAll('#ai-out button').forEach(b => b.setAttribute('aria-pressed', 'false'));
     } catch (err) { pic.textContent = '這個檔案讀不出來，請換 JPG 或 PNG。'; }
     e.target.value = '';
   });
   del.addEventListener('click', () => { if (state[kind]) URL.revokeObjectURL(state[kind].url); state[kind] = null; pic.textContent = empty; del.hidden = true; if (kind === 'photo') $('#focusRow').hidden = true; schedule(); });
 }
+/* ===== AI 生成主視覺（需要在 CONFIG.imageEndpoint 填 Worker 網址，見 README） ===== */
+const AI_STYLES = [
+  ['photo', '寫實照片', 'professional commercial photography, photorealistic, natural light, sharp focus, high detail'],
+  ['food', '美食攝影', 'appetizing food photography, close-up, shallow depth of field, soft window light, styled table setting'],
+  ['product', '商品棚拍', 'studio product photography, clean seamless background, softbox lighting, crisp detail'],
+  ['illust', '插畫', 'modern flat vector illustration, clean bold shapes, vibrant harmonious colors'],
+  ['water', '水彩', 'delicate watercolor painting, soft washes, visible paper texture'],
+  ['toy', '3D 卡通', 'cute 3D cartoon render, soft clay style, pastel colors, soft studio lighting'],
+  ['jp', '日系清新', 'airy Japanese lifestyle photography, bright pastel tones, soft daylight, minimal'],
+  ['neon', '霓虹夜景', 'cinematic neon-lit night scene, vivid magenta and cyan glow, wet reflections']
+];
+const imgOn = !!CONFIG.imageEndpoint;
+let aiStyle = 'photo', aiBusy = false, aiUrls = [], aiLast = 0;
+$('#ai-style').innerHTML = AI_STYLES.map(([k, n]) => `<button type="button" class="chip" data-s="${k}" aria-pressed="${k === aiStyle}">${n}</button>`).join('');
+$('#ai-open').hidden = !imgOn;
+$('#ai-go').textContent = `產生 ${CONFIG.imageCount || 2} 張`;
+// 目前版型的照片區有多大（用一張假照片排一次版）
+function photoSlot() {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 2;
+  try {
+    const L = layout(state.spec, { ...content(), photo: { img: cv, small: cv, w: 4000, h: 4000, url: '' } }, { ...state.style, adj: state.adj });
+    const o = L.ops.find(o => o.t === 'img' && o.k === 'photo');
+    if (o) return { w: o.w, h: o.h };
+  } catch (e) { /* 排版失敗時用整張的比例 */ }
+  return { w: state.spec.w, h: state.spec.h, none: true };
+}
+function genSize(slot) {
+  const a = clamp(slot.w / slot.h, 1 / 3, 3), max = clamp(CONFIG.imageMaxSide || 1536, 512, 1920);
+  const long = clamp(Math.round(Math.max(slot.w, slot.h) / 25.4 * 200), 768, max);
+  const r16 = v => clamp(Math.round(v / 16) * 16, 256, 1920);
+  return a >= 1 ? { w: r16(long), h: r16(long / a) } : { w: r16(long * a), h: r16(long) };
+}
+async function askText(prompt) { return aiMode === 'claude' ? aiSample.json(prompt, { modelTier: 'quick', cache: false }) : endpointJSON(prompt); }
+async function imagePrompt(desc, slot) {
+  const st = AI_STYLES.find(x => x[0] === aiStyle) || AI_STYLES[0], a = slot.w / slot.h, c = content();
+  let main = desc;
+  if (aiMode) {
+    try {
+      const r = await askText(`把下面的文宣主視覺畫面描述，改寫成給圖像生成模型用的英文提示詞：40 到 80 個英文單字，具體寫出主角、場景、光線、構圖，不要出現任何文字、字母、招牌或標誌。只回傳 JSON：{"prompt":"..."}\n\n畫面描述：${desc}\n文宣標題（只供參考，不要畫成文字）：${c.title.replace(/\n/g, ' ')} ${c.sub}`);
+      if (r && typeof r.prompt === 'string' && r.prompt.trim().length > 10) main = r.prompt.trim().slice(0, 900);
+    } catch (e) { /* AI 沒回應就直接用原本的描述 */ }
+  }
+  const orient = a > 1.15 ? 'wide landscape' : a < 0.87 ? 'tall portrait' : 'square';
+  return `${main}. ${st[2]}. ${orient} composition for a printed flyer, uncluttered background, no text, no letters, no words, no signage, no logo, no watermark.`;
+}
+async function genImage(prompt, w, h, seed) {
+  const wait = 1700 - (Date.now() - aiLast); if (wait > 0) await new Promise(r => setTimeout(r, wait));
+  aiLast = Date.now();
+  let r, j = {};
+  try { r = await fetch(CONFIG.imageEndpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ prompt, width: w, height: h, seed }) }); }
+  catch (e) { throw { code: 'network' }; }
+  try { j = await r.json(); } catch (e) { /* 不是 JSON */ }
+  if (!r.ok || typeof j.image !== 'string') throw { code: j.error || (r.status === 429 ? 'quota' : 'error') };
+  const b64 = j.image.replace(/^data:[^,]*,/, ''), bin = atob(b64), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return new Blob([u8], { type: b64.startsWith('iVBOR') ? 'image/png' : b64.startsWith('UklGR') ? 'image/webp' : 'image/jpeg' });
+}
+const AI_ERR = { quota: '今天的 AI 生圖免費額度用完了（每天早上 8 點重置）。可以先上傳自己的照片。', blocked: '這個描述被安全規則擋下來了，請換個說法再試。', too_fast: '按太快了，請等幾秒再試一次。', not_configured: 'AI 生圖還沒設定好，請店家依說明文件完成設定。', network: '連不上 AI 服務，請檢查網路後再試一次。', bad_request: '描述有問題，請改一下再試。' };
+function aiOpen(open) {
+  $('#aiImg').hidden = !open; $('#ai-open').setAttribute('aria-expanded', open);
+  if (open) { const sl = photoSlot(), sz = genSize(sl); $('#ai-size').textContent = sl.none ? `目前的版型沒有照片區，產生後請換成「大圖置頂」等有照片的版型（${sz.w}×${sz.h} 像素）` : `依目前版型照片區的比例產生（${sz.w}×${sz.h} 像素），約 10–30 秒`; $('#aiImg').scrollIntoView({ block: 'nearest' }); if (!$('#ai-desc').value.trim()) $('#ai-desc').focus({ preventScroll: true }); }
+}
+$('#ai-open').addEventListener('click', () => aiOpen($('#aiImg').hidden));
+$('#ai-close').addEventListener('click', () => aiOpen(false));
+$('#ai-style').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (!b) return; aiStyle = b.dataset.s; $('#ai-style').querySelectorAll('[data-s]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+$('#ai-idea').addEventListener('click', async () => {
+  const c = content(), btn = $('#ai-idea'), st = $('#ai-stat');
+  const topic = [c.sub, c.title.replace(/\n/g, ' '), c.hi, c.points.split('\n')[0]].filter(Boolean).join('，');
+  if (!topic && !c.brand) { st.textContent = '請先在上面填主標題或副標題，或直接寫想要的畫面。'; return; }
+  let desc = `${topic || c.brand}的宣傳主視覺：主角清楚、畫面明亮乾淨、背景簡單`;
+  if (aiMode) {
+    btn.disabled = true; st.textContent = 'AI 正在想畫面…';
+    try {
+      const r = await askText(`你是廣告美術。依照下面的文宣內容，想一個適合當主視覺照片的畫面，用繁體中文一句話描述（30 到 60 字），具體寫出主角、場景、光線、色調；畫面裡不要有文字或招牌。只回傳 JSON：{"desc":"..."}\n\n店名：${c.brand}\n主標題：${c.title}\n副標題：${c.sub}\n重點：${c.points}`);
+      if (r && typeof r.desc === 'string' && r.desc.trim()) desc = r.desc.trim().slice(0, 300);
+    } catch (e) { /* 用預設的句子 */ }
+    btn.disabled = false; st.textContent = '';
+  }
+  $('#ai-desc').value = desc;
+});
+$('#ai-go').addEventListener('click', async () => {
+  const desc = $('#ai-desc').value.trim(), st = $('#ai-stat'), btn = $('#ai-go'), out = $('#ai-out');
+  if (!desc) { st.textContent = '請先寫想要的畫面，或按「依文宣內容幫我想」。'; $('#ai-desc').focus(); return; }
+  if (aiBusy) return;
+  aiBusy = true; btn.disabled = true;
+  const slot = photoSlot(), sz = genSize(slot), n = clamp(CONFIG.imageCount || 2, 1, 4);
+  aiUrls.forEach(u => URL.revokeObjectURL(u)); aiUrls = []; out.textContent = '';
+  const cells = Array.from({ length: n }, () => { const d = document.createElement('div'); d.className = 'sk'; d.style.aspectRatio = `${sz.w} / ${sz.h}`; out.append(d); return d; });
+  st.textContent = '正在畫圖，大約 10–30 秒…';
+  const prompt = await imagePrompt(desc, slot), seed0 = Math.floor(Math.random() * 2e9);
+  let okN = 0, err = null;
+  for (let i = 0; i < n; i++) {
+    try {
+      const blob = await genImage(prompt, sz.w, sz.h, (seed0 + i * 7919) % 2147483647), url = URL.createObjectURL(blob); aiUrls.push(url);
+      const b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-pressed', 'false'); b.style.aspectRatio = `${sz.w} / ${sz.h}`; b._blob = blob;
+      const im = document.createElement('img'); im.src = url; im.alt = `AI 產生的第 ${i + 1} 張圖`; b.append(im);
+      cells[i].replaceWith(b); cells[i] = b; okN++;
+      st.textContent = i < n - 1 ? `已完成 ${okN} 張，繼續畫下一張…` : '';
+    } catch (e) {
+      err = e && e.code ? e.code : 'error';
+      const f = document.createElement('div'); f.className = 'fail'; f.style.aspectRatio = `${sz.w} / ${sz.h}`; f.textContent = '這張沒畫成功'; cells[i].replaceWith(f); cells[i] = f;
+      if (['quota', 'not_configured', 'blocked', 'network'].includes(err)) { for (let k = i + 1; k < n; k++) cells[k].remove(); break; }
+    }
+  }
+  st.textContent = okN ? `點一張圖就會放進文宣${slot.none ? '（目前的版型沒有照片區，換成「大圖置頂」等版型才看得到）' : ''}。不滿意可以改描述或風格，再產生一次。` + (err ? '（有一張失敗）' : '') : (AI_ERR[err] || '畫圖失敗了，請再試一次。');
+  btn.textContent = `再產生 ${n} 張`; btn.disabled = false; aiBusy = false;
+});
+$('#ai-out').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b || !b._blob) return;
+  try {
+    setPic('photo', await loadImage(b._blob));
+    $('#ai-out').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    $('#ai-stat').textContent = '已經放進文宣了。照片位置和大小可以到「微調」分頁再調整。';
+  } catch (err) { $('#ai-stat').textContent = '這張圖讀不出來，請換一張。'; }
+});
 function setAIMode() {
   const on = !!aiMode;
   $('#aibtn').textContent = on ? 'AI 幫我排 3 種版本' : '幫我推薦 3 種版本';
@@ -1877,7 +2017,7 @@ document.addEventListener('keydown', e => {
   e.preventDefault();
 });
 buildPickers(); fillInputs(); refresh();
-window.yijian = { state, layout, layoutOwn, content, buildPDF, buildJPG, refresh, em, setMode, showTab, hitField, hitGroup, groupBoxes, mainLayout, select, undo, wrap, balanced, TEMPLATES, PALETTES, FONTS };
+window.yijian = { state, CONFIG, photoSlot, genSize, layout, layoutOwn, content, buildPDF, buildJPG, refresh, em, setMode, showTab, hitField, hitGroup, groupBoxes, mainLayout, select, undo, wrap, balanced, TEMPLATES, PALETTES, FONTS };
 }
 </script>
 </body>
