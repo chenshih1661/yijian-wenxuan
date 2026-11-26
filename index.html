@@ -107,6 +107,10 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:40px}
 /* 預覽台 */
 .stage{order:-1;position:sticky;top:0;align-self:start;z-index:8;height:var(--pvh);background:var(--mat);display:flex;flex-direction:column;padding:8px var(--pad) 4px;border-bottom:1px solid var(--line)}
 .proof{flex:1;min-height:0;display:grid;place-items:center;padding:4px}
+.posterbox{border:2px solid var(--acc)}
+.primary.wide{width:100%;margin:14px 0 4px}
+.aigrid canvas{display:block;width:100%!important;height:auto!important}
+.aigrid.posters>*{max-height:none}
 .aiimg{border:1px solid var(--line);border-radius:14px;padding:4px 14px 14px;margin:12px 0;background:var(--bg)}
 .row.tight{margin-top:4px}
 .aigrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
@@ -253,10 +257,21 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:40px}
    </div>
    <label class="f" id="focusRow" hidden><span>照片裁切位置<em>重點被裁掉時拉這裡</em></span><input type="range" id="focus" min="0" max="100" value="50"></label>
   </div>
+  <button type="button" class="primary wide" id="ap-jump" hidden>AI 一鍵生成整張海報</button>
   <button type="button" class="btn next" data-go="layout" id="nextLayout">下一步：選版型</button>
  </div>
 
  <div class="pane" id="pane-layout" role="tabpanel" hidden>
+  <div class="aiimg posterbox" id="apBox" hidden>
+   <div class="selhead"><b>AI 一鍵生成整張海報</b></div>
+   <p class="ehint">依你在「內容」填的資料，AI 畫出整張海報的畫面，文字由程式一字不差排上去，不會錯字。</p>
+   <label class="f"><span>畫面想要什麼？<em>可以不填，AI 會依內容自己想</em></span><textarea id="ap-desc" rows="2" placeholder="例如：木頭桌上的拿鐵和可頌，早晨陽光"></textarea></label>
+   <span class="lab">風格</span><div class="chips" id="ap-style"></div>
+   <div class="row"><button type="button" class="primary" id="ap-go">產生 2 張海報</button></div>
+   <p class="ehint" id="ap-size"></p>
+   <p class="status" id="ap-stat" aria-live="polite"></p>
+   <div class="aigrid posters" id="ap-out"></div>
+  </div>
   <div class="ai">
    <label class="f"><span>想要的感覺</span><textarea id="vibe" rows="2" placeholder="例如：溫暖、手作感，像巷弄咖啡店"></textarea></label>
    <label class="check" id="polishRow" hidden><input type="checkbox" id="polish">順便潤飾標題和文案（價格、日期、地址不會改）</label>
@@ -317,7 +332,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script>
 {
 /* ===== 設定：自架時把 aiEndpoint 改成你的 AI 服務網址（見 README） ===== */
-const CONFIG = { aiEndpoint: '', imageEndpoint: 'https://yijian-ai.chen-shih1661.workers.dev/image', imageCount: 2, imageMaxSide: 1536, upscaleModel: 'models/realesr-general-x4v3.onnx', ortBase: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/', upscaleMaxWait: 60 };
+const CONFIG = { aiEndpoint: '', imageEndpoint: 'https://yijian-ai.chen-shih1661.workers.dev/image', imageCount: 2, imageMaxSide: 1536, posterMaxSide: 1280, upscaleModel: 'models/realesr-general-x4v3.onnx', ortBase: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/', upscaleMaxWait: 60 };
 
 const $ = s => document.querySelector(s);
 /* ===== LINE 等 App 內建瀏覽器不能下載檔案：LINE 自動改用手機瀏覽器開啟 ===== */
@@ -853,6 +868,37 @@ const TEMPLATES = {
       stack(L, { x: X, y: S.y, w, h: bottom - S.y }, seq, { kmax, kmin: 3.2, valign: 'center' });
     }
   } },
+  aiPoster: { n: 'AI 海報', cat: 'ai', d: 'AI 依內容畫整張海報畫面，文字由程式精準排在留白處', draw(L, c) {
+    const { S, W, H, pal: P, m, u } = L, land = L.orient === 'land';
+    let reg = L.region || (land ? 'left' : 'top');
+    if (land && (reg === 'top' || reg === 'bottom')) reg = reg === 'top' ? 'left' : 'right';
+    if (!land && (reg === 'left' || reg === 'right')) reg = reg === 'left' ? 'top' : 'bottom';
+    if (c.photo) photo(L, { x: 0, y: 0, w: W, h: H }, c);
+    else { const n = Math.min(W, H); R(L, 0, 0, W, H, P.s); C(L, W * 0.72, H * 0.78, n * 0.5, P.a, 0.55); C(L, W * 0.18, H * 0.96, n * 0.32, P.p, 0.3); }
+    // 量留白處的亮度和雜亂程度，決定字的顏色、要不要加漸層襯底
+    const sr = land ? { x: reg === 'left' ? 0 : W / 2, y: 0, w: W / 2, h: H } : { x: 0, y: reg === 'top' ? 0 : H / 2, w: W, h: H / 2 };
+    const st = c.photo ? imgStats(c.photo, W, H, c.focus ?? 0.5, sr) : { m: lum(P.s) > 0.4 ? 0.8 : 0.2, sd: 0 };
+    const light = st.m >= 0.55, va = st.sd < 0.13 ? 0.28 : 0.72, rgb = light ? '255,255,255' : '0,0,0', V = a => `rgba(${rgb},${a})`;
+    const hasFoot = !!(c.contact || c.qr), fh = hasFoot ? footH(L, c) : 0, fTop = S.y + S.h - fh;
+    if (land) {
+      const gw = W * 0.62;
+      L.ops.push(reg === 'left' ? { t: 'grad', dir: 'h', x: 0, y: 0, w: gw, h: H, stops: [[0, V(va)], [0.6, V(va * 0.8)], [1, V(0)]] } : { t: 'grad', dir: 'h', x: W - gw, y: 0, w: gw, h: H, stops: [[0, V(0)], [0.4, V(va * 0.8)], [1, V(va)]] });
+    } else if (reg === 'top') L.ops.push({ t: 'grad', x: 0, y: 0, w: W, h: H * 0.62, stops: [[0, V(va)], [0.62, V(va * 0.8)], [1, V(0)]] });
+    else L.ops.push({ t: 'grad', x: 0, y: H * 0.38, w: W, h: H * 0.62, stops: [[0, V(0)], [0.38, V(va * 0.8)], [1, V(va)]] });
+    const dk = '#1A1A1A', pick = (list, wantDark) => list.find(x => wantDark ? lum(x) < 0.3 : lum(x) > 0.45) || (wantDark ? dk : '#FFFFFF');
+    const ink = light ? dk : '#FFFFFF', acc = pick([P.p, P.a], light), accInk = lum(acc) > 0.4 ? dk : '#FFFFFF';
+    const B = blocks(L, c, { title: ink, sub: ink, price: acc, hiBg: acc, hiInk: accInk, body: ink, bullet: acc, ctaBg: acc, ctaInk: accInk });
+    let y = S.y;
+    const bt = brandTag(L, S.x, S.y, clamp(u * 0.07, 5, 28), c, { bg: '#FFFFFF', ink: dk });
+    if (bt && (reg === 'top' || reg === 'left' || land)) y += bt.h + m * 0.6;
+    let footInk = ink;
+    if (hasFoot && !(reg === 'bottom' && !land)) { const b2 = fTop - m * 0.6; R(L, 0, b2, W, H - b2, 'rgba(255,255,255,0.9)'); footInk = dk; }
+    if (hasFoot) footer(L, { x: S.x, y: fTop, w: S.w, h: fh }, c, { ink: footInk });
+    const bottom = hasFoot ? fTop - m * 0.9 : S.y + S.h, items = [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], kmax = clamp(u * 0.15, 5, 130);
+    if (land) { const w = S.w * 0.5 - m * 0.5; stack(L, { x: reg === 'left' ? S.x : S.x + S.w - w, y, w, h: bottom - y }, items, { kmax, kmin: 3.2, valign: 'center' }); }
+    else if (reg === 'top') stack(L, { x: S.x, y, w: S.w, h: S.y + S.h * 0.5 - y }, items, { kmax, kmin: 3.2, valign: 'top', align: 'center' });
+    else { const y0 = Math.max(y, S.y + S.h * 0.5); stack(L, { x: S.x, y: y0, w: S.w, h: bottom - y0 }, items, { kmax, kmin: 3.2, valign: 'bottom', align: 'center' }); }
+  } },
   fullPhoto: { n: '滿版照片', d: '照片鋪滿整張，文字壓在下方深色漸層上；適合餐飲、活動、房仲等有好照片的', draw(L, c) {
     const { S, W, H, pal: P, m, u } = L;
     if (c.photo) photo(L, { x: 0, y: 0, w: W, h: H }, c);
@@ -961,7 +1007,7 @@ function layout(spec, c, style) {
   let pal = PALETTES[style.palette] || PALETTES.sunset;
   if (adj.custom && /^#[0-9a-f]{6}$/i.test(adj.p || '') && /^#[0-9a-f]{6}$/i.test(adj.a || '')) pal = { ...pal, p: adj.p, op: lum(adj.p) > 0.4 ? '#1A1A1A' : '#FFFFFF', a: adj.a, oa: lum(adj.a) > 0.4 ? '#1A1A1A' : '#FFFFFF', s: mix(adj.p, '#FFFFFF', 0.86) };
   const ops = [];
-  const L = { ops, g: null, slots: {}, warns, adj, W, H, T, S, u, m, b, font: FONTS[style.font] ? style.font : 'sans', pal,
+  const L = { ops, g: null, region: style.region, slots: {}, warns, adj, W, H, T, S, u, m, b, font: FONTS[style.font] ? style.font : 'sans', pal,
     small: u < 80, minText: u < 80 ? 1.9 : 2.3, orient: spec.w / spec.h > 1.15 ? 'land' : spec.h / spec.w > 1.15 ? 'port' : 'sq',
     warn(s) { if (!warns.includes(s)) warns.push(s); } };
   ops.push = function (...a) { for (const o of a) if (L.g && o.g === undefined) o.g = L.g; return Array.prototype.push.apply(this, a); };
@@ -970,6 +1016,25 @@ function layout(spec, c, style) {
   if (Object.keys(ed).length) { applyEdits(L, ed); checkSafe(L); }
   if (b < 2) L.warn('出血小於 2 mm，多數印刷廠要求 3 mm。');
   return L;
+}
+
+// 圖片某個區域的平均亮度與雜亂程度（AI 海報用來決定字色、要不要襯底）
+function imgStats(p, W, H, f, r) {
+  const key = [W, H, f, r.x, r.y, r.w, r.h].map(v => Math.round(v * 10)).join(','), cache = p._st || (p._st = {});
+  if (cache[key]) return cache[key];
+  let res = { m: 0.5, sd: 0.3 };
+  try {
+    const src = p.small || p.img, sw = src.width || p.w, sh = src.height || p.h, sc = Math.max(W / sw, H / sh), dx = (W - sw * sc) * f, dy = (H - sh * sc) * f;
+    const x0 = clamp((r.x - dx) / sc, 0, sw), y0 = clamp((r.y - dy) / sc, 0, sh), x1 = clamp((r.x + r.w - dx) / sc, 0, sw), y1 = clamp((r.y + r.h - dy) / sc, 0, sh);
+    if (x1 - x0 >= 1 && y1 - y0 >= 1) {
+      const N = 40, cv = document.createElement('canvas'); cv.width = cv.height = N;
+      const x = cv.getContext('2d', { willReadFrequently: true }); x.drawImage(src, x0, y0, x1 - x0, y1 - y0, 0, 0, N, N);
+      const d = x.getImageData(0, 0, N, N).data; let s1 = 0, s2 = 0;
+      for (let i = 0; i < d.length; i += 4) { const l = (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255; s1 += l; s2 += l * l; }
+      const n = d.length / 4, m = s1 / n; res = { m, sd: Math.sqrt(Math.max(0, s2 / n - m * m)) };
+    }
+  } catch (e) { /* 讀不到像素就用預設值 */ }
+  return (cache[key] = res);
 }
 
 /* ===== 單獨調整：移動、縮放、旋轉、換色、隱藏 ===== */
@@ -1132,7 +1197,7 @@ function paint(ctx, ops, s, oy = 0, ox = 0, full = false) {
     }
     case 'circle': ctx.globalAlpha = o.a; ctx.fillStyle = o.c; ctx.beginPath(); ctx.arc(o.cx * s - ox, o.cy * s - oy, o.r * s, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; break;
     case 'ring': ctx.globalAlpha = o.a; ctx.strokeStyle = o.c; ctx.lineWidth = o.lw * s; ctx.beginPath(); ctx.arc(o.cx * s - ox, o.cy * s - oy, o.r * s, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1; break;
-    case 'grad': { const g = ctx.createLinearGradient(0, o.y * s - oy, 0, (o.y + o.h) * s - oy); for (const [p, c] of o.stops) g.addColorStop(p, c); ctx.fillStyle = g; ctx.fillRect(o.x * s - ox, o.y * s - oy, o.w * s, o.h * s); break; }
+    case 'grad': { const g = o.dir === 'h' ? ctx.createLinearGradient(o.x * s - ox, 0, (o.x + o.w) * s - ox, 0) : ctx.createLinearGradient(0, o.y * s - oy, 0, (o.y + o.h) * s - oy); for (const [p, c] of o.stops) g.addColorStop(p, c); ctx.fillStyle = g; ctx.fillRect(o.x * s - ox, o.y * s - oy, o.w * s, o.h * s); break; }
     case 'img': {
       ctx.save(); shape(ctx, o, s, ox, oy); ctx.clip();
       const sc = o.fit === 'contain' ? Math.min(o.w / o.iw, o.h / o.ih) : Math.max(o.w / o.iw, o.h / o.ih);
@@ -1272,7 +1337,7 @@ function aiPrompt(c, vibe, spec, polish) {
 聯絡方式：${c.contact}
 
 可用版型（代號：說明）：
-${Object.entries(TEMPLATES).map(([k, v]) => `${k}：${v.n}，${v.d}`).join('\n')}
+${Object.entries(TEMPLATES).filter(([, v]) => v.cat !== 'ai').map(([k, v]) => `${k}：${v.n}，${v.d}`).join('\n')}
 
 可用配色（代號：名稱，適合）：
 ${Object.entries(PALETTES).map(([k, v]) => `${k}：${v.n}，${v.mood}`).join('\n')}
@@ -1287,7 +1352,7 @@ ${polish ? '另外請潤飾文案：主標題短而有力（最多 14 字，可�
 function cleanOpts(list) {
   const seen = new Set(), out = [];
   for (const o of Array.isArray(list) ? list : []) {
-    if (!o || !TEMPLATES[o.template] || !PALETTES[o.palette] || seen.has(o.template)) continue;
+    if (!o || !TEMPLATES[o.template] || TEMPLATES[o.template].cat === 'ai' || !PALETTES[o.palette] || seen.has(o.template)) continue;
     seen.add(o.template);
     out.push({ template: o.template, palette: o.palette, font: FONTS[o.font] ? o.font : 'sans', why: String(o.why || '').slice(0, 40) });
   }
@@ -1349,7 +1414,7 @@ function buildPickers() {
   $('#presets').innerHTML = PRESETS.map(([n, w, h], i) => `<button type="button" class="chip" data-i="${i}" aria-pressed="false">${n}<small>${w}×${h}</small></button>`).join('');
   const tb = ([k, t]) => `<button type="button" class="thumb" data-t="${k}" aria-pressed="false"><span class="cv"><canvas></canvas></span><span>${t.n}</span></button>`;
   $('#thumbs-ad').innerHTML = Object.entries(TEMPLATES).filter(([, t]) => t.cat === 'ad').map(tb).join('');
-  $('#thumbs-classic').innerHTML = Object.entries(TEMPLATES).filter(([, t]) => t.cat !== 'ad').map(tb).join('');
+  $('#thumbs-classic').innerHTML = Object.entries(TEMPLATES).filter(([, t]) => !t.cat).map(tb).join('');
   $('#pals').innerHTML = Object.entries(PALETTES).map(([k, p]) => `<button type="button" class="sw" data-p="${k}" aria-pressed="false"><span class="dots"><i style="background:${p.p}"></i><i style="background:${p.a}"></i><i style="background:${p.s}"></i></span>${p.n}</button>`).join('');
   $('#fonts').innerHTML = Object.entries(FONTS).map(([k, f]) => `<button type="button" class="chip" data-f="${k}" aria-pressed="false" style="font-family:${f.fam.replace(/"/g, "'")}">${f.n}</button>`).join('');
 }
@@ -1605,17 +1670,37 @@ function genSize(slot) {
   return a >= 1 ? { w: r16(long), h: r16(long / a) } : { w: r16(long * a), h: r16(long) };
 }
 async function askText(prompt) { return aiMode === 'claude' ? aiSample.json(prompt, { modelTier: 'quick', cache: false }) : endpointJSON(prompt); }
-async function imagePrompt(desc, slot) {
-  const st = AI_STYLES.find(x => x[0] === aiStyle) || AI_STYLES[0], a = slot.w / slot.h, c = content();
-  let main = desc;
+const CLEAN = 'Every object is plain and unmarked; the image contains no writing of any kind.';
+const sceneEP = () => CONFIG.imageEndpoint.replace(/\/image\/?$/, '/scene');
+// 把畫面描述裡提到招牌、文字、引號的地方拿掉（不然 AI 會在畫面裡寫字）
+const WRITING = /\b(signs?|signage|signboards?|banners?|posters?|menus?|labels?|logos?|captions?|slogans?|text|texts|words?|letters?|lettering|writing|written|reads?|reading|says|inscriptions?|price tags?|billboards?|chalkboards?)\b|["“”]/i;
+function cleanScene(s) {
+  if (!s) return null;
+  let t = String(s).replace(/,?\s*(?:with|featuring|showing|displaying|bearing|and|beside|near|under)\s+(?:a|an|the|some)?\s*(?:[a-z-]+\s+){0,2}(?:signs?|signage|banners?|posters?|menus?|labels?|logos?|chalkboards?|billboards?)\b[^,.;]*/gi, '');
+  t = t.split(/(?<=[.!?])\s+/).filter(x => x.trim() && !WRITING.test(x)).join(' ').trim();
+  return t.length > 12 ? t : null;
+}
+// 把中文描述改寫成英文畫面描述：只寫看得到的東西，不提招牌、價格，生圖才不會亂寫字
+async function sceneOf(text) { const s = await sceneRaw(text); return cleanScene(s); }
+async function sceneRaw(text) {
   if (aiMode) {
     try {
-      const r = await askText(`把下面的文宣主視覺畫面描述，改寫成給圖像生成模型用的英文提示詞：40 到 80 個英文單字，具體寫出主角、場景、光線、構圖，不要出現任何文字、字母、招牌或標誌。只回傳 JSON：{"prompt":"..."}\n\n畫面描述：${desc}\n文宣標題（只供參考，不要畫成文字）：${c.title.replace(/\n/g, ' ')} ${c.sub}`);
-      if (r && typeof r.prompt === 'string' && r.prompt.trim().length > 10) main = r.prompt.trim().slice(0, 900);
-    } catch (e) { /* AI 沒回應就直接用原本的描述 */ }
+      const r = await askText(`把下面的內容想成一個適合當主視覺的畫面，用英文寫 20 到 45 個單字的畫面描述，只寫看得到的東西（主角、場景、光線、顏色），不能提到開幕、價格、折扣、文字、招牌、菜單、標籤、標誌或海報。只回傳 JSON：{"scene":"..."}\n\n${text}`);
+      if (r && typeof r.scene === 'string' && r.scene.trim().length > 10) return r.scene.trim().slice(0, 400);
+    } catch (e) { /* 改用 Cloudflare 的文字模型 */ }
   }
-  const orient = a > 1.15 ? 'wide landscape' : a < 0.87 ? 'tall portrait' : 'square';
-  return `${main}. ${st[2]}. ${orient} composition for a printed flyer, uncluttered background, no text, no letters, no words, no signage, no logo, no watermark.`;
+  try {
+    const r = await fetch(sceneEP(), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: text.slice(0, 1200) }) });
+    const j = await r.json();
+    if (r.ok && typeof j.scene === 'string' && j.scene.trim()) return j.scene.trim().slice(0, 400);
+  } catch (e) { /* 沒有就直接用中文 */ }
+  return null;
+}
+async function imagePrompt(desc, slot) {
+  const st = AI_STYLES.find(x => x[0] === aiStyle) || AI_STYLES[0], a = slot.w / slot.h;
+  const main = (await sceneOf(desc)) || desc;
+  const orient = a > 1.15 ? 'Wide landscape' : a < 0.87 ? 'Tall portrait' : 'Square';
+  return `${main} ${st[2]}. ${orient} composition with an uncluttered background. ${CLEAN}`;
 }
 async function genImage(prompt, w, h, seed) {
   const wait = 1700 - (Date.now() - aiLast); if (wait > 0) await new Promise(r => setTimeout(r, wait));
@@ -1679,6 +1764,80 @@ $('#ai-go').addEventListener('click', async () => {
   }
   st.textContent = okN ? `點一張圖就會放進文宣${slot.none ? '（目前的版型沒有照片區，換成「大圖置頂」等版型才看得到）' : ''}。不滿意可以改描述或風格，再產生一次。` + (err ? '（有一張失敗）' : '') : (AI_ERR[err] || '畫圖失敗了，請再試一次。');
   btn.textContent = `再產生 ${n} 張`; btn.disabled = false; aiBusy = false;
+});
+/* ===== AI 一鍵生成整張海報：AI 畫畫面（留白），文字由程式排 ===== */
+const AP_COMP = {
+  top: 'Vertical composition: the upper half is a calm, plain, softly lit empty area; all objects sit in the lower half.',
+  bottom: 'Vertical composition: the objects fill the upper half; the lower half is an empty, smooth, plain surface.',
+  left: 'Horizontal composition: the left half is a calm, plain, softly lit empty area; all objects sit in the right half.',
+  right: 'Horizontal composition: the objects fill the left half; the right half is a calm, plain, softly lit empty area.'
+};
+function hueName(hex) {
+  const n = parseInt(String(hex).slice(1, 7), 16), r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn, sat = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  if (sat < 0.15) return l > 0.85 ? 'white' : l > 0.6 ? 'light gray' : l > 0.3 ? 'gray' : 'charcoal';
+  let h = d === 0 ? 0 : mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h = (h * 60 + 360) % 360;
+  const name = h < 15 || h >= 345 ? 'red' : h < 40 ? 'orange' : h < 65 ? 'golden yellow' : h < 160 ? 'green' : h < 200 ? 'teal' : h < 250 ? 'blue' : h < 290 ? 'purple' : 'pink';
+  return (l < 0.32 ? 'deep ' : l > 0.78 ? 'pastel ' : '') + name;
+}
+function posterPrompt(scene, style, region) {
+  const P = state.adj.custom ? { p: state.adj.p, a: state.adj.a } : (PALETTES[state.style.palette] || PALETTES.sunset);
+  return `${scene} ${style}. ${AP_COMP[region]} Color accents of ${hueName(P.p)} and ${hueName(P.a)}. ${CLEAN}`;
+}
+function posterSize() {
+  const b = state.spec.bleed, W = state.spec.w + 2 * b, H = state.spec.h + 2 * b, a = clamp(W / H, 1 / 3, 3), max = clamp(CONFIG.posterMaxSide || 1280, 512, 1920), r16 = v => clamp(Math.round(v / 16) * 16, 256, 1920);
+  return a >= 1 ? { w: r16(max), h: r16(max / a), W, H } : { w: r16(max * a), h: r16(max), W, H };
+}
+let apStyle = 'photo', apBusy = false;
+$('#ap-style').innerHTML = AI_STYLES.map(([k, n]) => `<button type="button" class="chip" data-s="${k}" aria-pressed="${k === apStyle}">${n}</button>`).join('');
+$('#apBox').hidden = $('#ap-jump').hidden = !imgOn;
+$('#ap-style').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (!b) return; apStyle = b.dataset.s; $('#ap-style').querySelectorAll('[data-s]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+$('#ap-jump').addEventListener('click', () => { showTab('layout'); $('#apBox').scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+function apHint() { const z = posterSize(); $('#ap-size').textContent = `依目前尺寸畫 ${z.w}×${z.h} 像素的畫面，一次 2 張約 20–40 秒；選好後會自動放大成 300 dpi。`; }
+$('#ap-go').addEventListener('click', async () => {
+  if (apBusy) return;
+  const c = content(), st = $('#ap-stat'), btn = $('#ap-go'), out = $('#ap-out'), desc = $('#ap-desc').value.trim();
+  const info = [c.brand, c.title, c.sub, c.hi, c.points].map(x => (x || '').replace(/\n/g, ' ').trim()).filter(Boolean).join('\n');
+  if (!info && !desc) { st.textContent = '請先到「內容」分頁填主標題等資料，或在上面寫想要的畫面。'; return; }
+  apBusy = true; btn.disabled = true; apHint();
+  const sz = posterSize(), regs = sz.W > sz.H * 1.15 ? ['left', 'right'] : ['top', 'bottom'];
+  out.textContent = '';
+  const cells = regs.map(() => { const d = document.createElement('div'); d.className = 'sk'; d.style.aspectRatio = `${sz.w} / ${sz.h}`; out.append(d); return d; });
+  st.textContent = 'AI 正在依內容構思畫面…';
+  upBackend().then(ep => getSession(ep)).catch(() => null);
+  const style = (AI_STYLES.find(x => x[0] === apStyle) || AI_STYLES[0])[2];
+  const scene = (await sceneOf(desc ? `想要的畫面：${desc}\n文宣內容：\n${info}` : info)) || desc || info;
+  st.textContent = '正在畫海報，大約 20–40 秒…';
+  const seed0 = Math.floor(Math.random() * 2e9);
+  let okN = 0, err = null;
+  for (let i = 0; i < regs.length; i++) {
+    try {
+      const blob = await genImage(posterPrompt(scene, style, regs[i]), sz.w, sz.h, (seed0 + i * 7919) % 2147483647), im = await loadImage(blob);
+      const L = layout(state.spec, { ...content(), photo: im }, { ...state.style, template: 'aiPoster', region: regs[i], adj: state.adj });
+      const b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', `AI 海報第 ${i + 1} 張`);
+      b._blob = blob; b._region = regs[i];
+      const cv = document.createElement('canvas'); b.append(cv); cells[i].replaceWith(b); cells[i] = b; thumbTo(cv, L, 360);
+      URL.revokeObjectURL(im.url); okN++;
+      st.textContent = i < regs.length - 1 ? `已完成 ${okN} 張，繼續畫下一張…` : '';
+    } catch (e) {
+      err = e && e.code ? e.code : 'error';
+      const f = document.createElement('div'); f.className = 'fail'; f.style.aspectRatio = `${sz.w} / ${sz.h}`; f.textContent = '這張沒畫成功'; cells[i].replaceWith(f); cells[i] = f;
+      if (['quota', 'not_configured', 'blocked', 'network'].includes(err)) { for (let k = i + 1; k < regs.length; k++) cells[k].remove(); break; }
+    }
+  }
+  st.textContent = okN ? '點一張海報就會套用，接著會自動放大成印刷解析度。文字可以到「內容」修改，位置可以到「微調」調整。' + (err ? '（有一張失敗）' : '') : (AI_ERR[err] || '畫海報失敗了，請再試一次。');
+  btn.textContent = '再產生 2 張海報'; btn.disabled = false; apBusy = false;
+});
+$('#ap-out').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b || !b._blob) return;
+  try {
+    const im = await loadImage(b._blob); im.ai = true; im.blob = b._blob;
+    setPic('photo', im);
+    Object.assign(state.style, { template: 'aiPoster', region: b._region }); state.sel = null;
+    $('#ap-out').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    $('#ap-stat').textContent = '已套用這張海報，正在放大成印刷解析度…';
+    await refresh(); upscalePhoto(true);
+  } catch (err) { $('#ap-stat').textContent = '這張讀不出來，請換一張。'; }
 });
 $('#ai-out').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b || !b._blob) return;
@@ -1770,7 +1929,7 @@ function photoPPI() {
   const o = state.L && state.L.ops.find(o => o.t === 'img' && o.k === 'photo'), b = o || photoSlot();
   return 25.4 / Math.max(b.w / p.w, b.h / p.h);
 }
-function upMsg(t) { $('#up-stat').textContent = t; if (!$('#aiImg').hidden && state.photo && state.photo.ai) $('#ai-stat').textContent = t; }
+function upMsg(t) { $('#up-stat').textContent = t; if (!$('#aiImg').hidden && state.photo && state.photo.ai) $('#ai-stat').textContent = t; if (state.style.template === 'aiPoster' && $('#ap-out').querySelector('[aria-pressed=true]')) $('#ap-stat').textContent = t; }
 function updUp() {
   const p = state.photo, busy = !!upJob;
   $('#up-ai').hidden = !p || busy || !!p.up || photoPPI() >= 280;
@@ -2000,6 +2159,7 @@ new ResizeObserver(() => { const b = $('#proof'); if (b.clientWidth !== lastW ||
 let curTab = 'size';
 function showTab(t, scroll = true) {
   curTab = t; document.documentElement.classList.toggle('adj-mode', t === 'adjust' && state.mode !== 'own');
+  if (t === 'layout' && imgOn) apHint();
   $('#pvHint').textContent = t === 'adjust' ? '點一下選取，拖曳移動，拉四角縮放' : '點文字可直接修改';
   for (const b of document.querySelectorAll('#tabs [data-tab]')) { const on = b.dataset.tab === t; b.setAttribute('aria-selected', on); $('#pane-' + b.dataset.tab).hidden = !on; }
   const pane = $('#pane-' + t), tabs = $('#tabs');
@@ -2155,7 +2315,7 @@ document.addEventListener('keydown', e => {
   e.preventDefault();
 });
 buildPickers(); fillInputs(); refresh();
-window.yijian = { state, CONFIG, photoSlot, genSize, srUpscale, upscalePhoto, photoPPI, upBackend, toJpeg, get upJob() { return upJob; }, layout, layoutOwn, content, buildPDF, buildJPG, refresh, em, setMode, showTab, hitField, hitGroup, groupBoxes, mainLayout, select, undo, wrap, balanced, TEMPLATES, PALETTES, FONTS };
+window.yijian = { state, CONFIG, cleanScene, imgStats, posterPrompt, posterSize, sceneOf, hueName, photoSlot, genSize, srUpscale, upscalePhoto, photoPPI, upBackend, toJpeg, get upJob() { return upJob; }, layout, layoutOwn, content, buildPDF, buildJPG, refresh, em, setMode, showTab, hitField, hitGroup, groupBoxes, mainLayout, select, undo, wrap, balanced, TEMPLATES, PALETTES, FONTS };
 }
 </script>
 </body>

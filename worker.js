@@ -2,6 +2,8 @@
 // 作用：
 //   1. 文字 AI（推薦版型、潤飾文案）：網頁把需求送到這裡，這裡帶著你的金鑰去問 Claude。
 //   2. AI 生圖（網址最後加 /image）：用 Cloudflare 內建的 Workers AI 畫圖，不需要另外的金鑰。
+//   3. 畫面描述（網址最後加 /scene）：用 Workers AI 的文字模型，把顧客的中文文案改寫成英文畫面描述，
+//      讓生圖不會在畫面裡亂寫字。
 // 金鑰放在 Cloudflare 的設定裡，不會出現在網頁上。
 //
 // 需要設定的項目（Worker 的 Settings）：
@@ -11,6 +13,7 @@
 //     ALLOW_ORIGIN       允許呼叫的網址，例如 https://你的帳號.github.io
 //     MODEL              （選填）文字 AI 的模型，預設 claude-haiku-5-5
 //     IMAGE_MODEL        （選填）生圖模型，預設 @cf/black-forest-labs/flux-2-klein-4b（Apache 2.0，可商用）
+//     TEXT_MODEL         （選填）畫面描述用的文字模型，預設依序試 Qwen3、Llama 3.1、Llama 3.2
 //
 // 費用：Workers AI 每天有免費額度（10,000 Neurons，每天早上 8 點重置），
 // 一張 1536×1024 的圖大約用 156，一天約 60 張。免費方案用完只會暫停到隔天，不會扣款。
@@ -35,6 +38,7 @@ export default {
     const path = new URL(request.url).pathname.replace(/\/+$/, '');
 
     if (path.endsWith('/image')) return image(body, request, env, json);
+    if (path.endsWith('/scene')) return scene(body, env, json);
     return text(body, env, json);
   }
 };
@@ -97,4 +101,33 @@ async function image(body, request, env, json) {
     if (/nsfw|unsafe|flagged|moderation|safety filter/i.test(msg)) return json({ error: 'blocked', detail }, 422);
     return json({ error: 'upstream_error', detail }, 502);
   }
+}
+
+const SCENE_RULES = 'You turn Chinese advertising copy into a short English description of ONE scene for an image generator. ' +
+  'Describe only visible things: the main subjects, setting, lighting and colors, in 20 to 45 English words. ' +
+  'Never mention shop openings, prices, discounts, words, letters, signs, menus, labels, logos, posters or any written text. ' +
+  'Show the products or services named in the copy as the main subjects and do not add unrelated foods, objects or people. ' +
+  'Reply with the description only.';
+
+// 依序嘗試的文字模型（模型被 Cloudflare 下架時會自動換下一個）
+const SCENE_MODELS = ['@cf/qwen/qwen3-30b-a3b-fp8', '@cf/meta/llama-3.1-8b-instruct-fp8', '@cf/meta/llama-3.2-3b-instruct'];
+
+async function scene(body, env, json) {
+  if (!env.AI) return json({ error: 'not_configured' }, 501);
+  const text = typeof body.text === 'string' ? body.text.trim().slice(0, 1200) : '';
+  if (!text) return json({ error: 'bad_request' }, 400);
+  let last = '';
+  for (const model of [env.TEXT_MODEL, ...SCENE_MODELS].filter(Boolean)) {
+    try {
+      const user = model.includes('qwen3') ? text + '\n/no_think' : text;
+      const out = await env.AI.run(model, { messages: [{ role: 'system', content: SCENE_RULES }, { role: 'user', content: user }], max_tokens: 400 });
+      const raw = out && (out.response ?? (out.choices && out.choices[0] && out.choices[0].message && out.choices[0].message.content) ?? (out.result && out.result.response));
+      const s = String(raw || '').replace(/<think>[\s\S]*?<\/think>/g, '').replace(/\s+/g, ' ').trim().replace(/^["'“”]+|["'“”]+$/g, '');
+      if (s) return json({ scene: s.slice(0, 400) });
+    } catch (e) {
+      last = String((e && e.message) || e);
+      if (/neurons|allocation|quota|4006|daily free/i.test(last)) return json({ error: 'quota', detail: last.slice(0, 300) }, 429);
+    }
+  }
+  return json({ error: 'upstream_error', detail: last.slice(0, 300) }, 502);
 }
