@@ -106,7 +106,8 @@ async function image(body, request, env, json) {
 const SCENE_RULES = 'You turn Chinese advertising copy into a short English description of ONE scene for an image generator. ' +
   'Describe only visible things: the main subjects, setting, lighting and colors, in 20 to 45 English words. ' +
   'Never mention shop openings, prices, discounts, words, letters, signs, menus, labels, logos, posters or any written text. ' +
-  'Show the products or services named in the copy as the main subjects and do not add unrelated foods, objects or people. ' +
+  'Show the products or services named in the copy as the main subjects. Do not add people or animals unless the copy is about them, and do not add foods or objects the copy does not mention. ' +
+  'Example: for 現烤麵包・手沖咖啡・在地小農蔬菜 write: Freshly baked crusty bread, a cup of pour-over coffee and colorful local farm vegetables on a rustic wooden table in warm morning light. ' +
   'Reply with the description only.';
 
 // 依序嘗試的文字模型（模型被 Cloudflare 下架時會自動換下一個）
@@ -123,7 +124,7 @@ async function scene(body, env, json) {
       const out = await env.AI.run(model, { messages: [{ role: 'system', content: SCENE_RULES }, { role: 'user', content: user }], max_tokens: 400 });
       const raw = out && (out.response ?? (out.choices && out.choices[0] && out.choices[0].message && out.choices[0].message.content) ?? (out.result && out.result.response));
       const s = String(raw || '').replace(/<think>[\s\S]*?<\/think>/g, '').replace(/\s+/g, ' ').trim().replace(/^["'“”]+|["'“”]+$/g, '');
-      if (s) return json({ scene: s.slice(0, 400) });
+      if (s) return json({ scene: s.slice(0, 400), model });
     } catch (e) {
       last = String((e && e.message) || e);
       if (/neurons|allocation|quota|4006|daily free/i.test(last)) return json({ error: 'quota', detail: last.slice(0, 300) }, 429);

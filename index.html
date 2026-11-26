@@ -896,8 +896,8 @@ const TEMPLATES = {
     if (hasFoot) footer(L, { x: S.x, y: fTop, w: S.w, h: fh }, c, { ink: footInk });
     const bottom = hasFoot ? fTop - m * 0.9 : S.y + S.h, items = [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], kmax = clamp(u * 0.15, 5, 130);
     if (land) { const w = S.w * 0.5 - m * 0.5; stack(L, { x: reg === 'left' ? S.x : S.x + S.w - w, y, w, h: bottom - y }, items, { kmax, kmin: 3.2, valign: 'center' }); }
-    else if (reg === 'top') stack(L, { x: S.x, y, w: S.w, h: S.y + S.h * 0.5 - y }, items, { kmax, kmin: 3.2, valign: 'top', align: 'center' });
-    else { const y0 = Math.max(y, S.y + S.h * 0.5); stack(L, { x: S.x, y: y0, w: S.w, h: bottom - y0 }, items, { kmax, kmin: 3.2, valign: 'bottom', align: 'center' }); }
+    else if (reg === 'top') stack(L, { x: S.x, y, w: S.w, h: S.y + S.h * 0.46 - y }, items, { kmax, kmin: 3.2, valign: 'top', align: 'center' });
+    else { const y0 = Math.max(y, S.y + S.h * 0.54); stack(L, { x: S.x, y: y0, w: S.w, h: bottom - y0 }, items, { kmax, kmin: 3.2, valign: 'bottom', align: 'center' }); }
   } },
   fullPhoto: { n: '滿版照片', d: '照片鋪滿整張，文字壓在下方深色漸層上；適合餐飲、活動、房仲等有好照片的', draw(L, c) {
     const { S, W, H, pal: P, m, u } = L;
