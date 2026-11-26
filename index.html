@@ -97,6 +97,17 @@ details ul{margin:4px 0 0;padding-left:1.2em}
 .inapp{background:#fff1b8;color:#4a3600;padding:12px max(4vw,16px);display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;font-size:15px}
 .inapp p{margin:0;flex:1 1 260px}
 .inapp .btn{background:#4a3600;color:#fff;border-color:#4a3600;text-decoration:none}
+.mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--field);border:1px solid var(--line);border-radius:999px;padding:4px;margin:4px 0 18px}
+.mode button{min-height:44px;border:0;border-radius:999px;background:transparent;font-size:16px;font-weight:700;cursor:pointer;color:var(--mute)}
+.mode button[aria-selected=true]{background:var(--ink);color:var(--bg)}
+.pic.tall{height:180px}.pic.tall img{max-height:180px}
+.fit{border:0;padding:0;margin:4px 0 12px;display:grid;gap:2px}.fit legend{font-size:14px;font-weight:700;margin-bottom:4px}
+.adj{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0 16px}
+.sl>span{display:flex!important;justify-content:space-between}.sl output{font-weight:400;color:var(--mute);font-variant-numeric:tabular-nums}
+.lab{display:block;font-size:14px;font-weight:700;margin-bottom:6px}
+.cl{display:inline-flex;align-items:center;gap:8px;font-size:15px}.cl input{width:52px;height:40px;border:1px solid var(--line);border-radius:8px;background:none;padding:2px}
+#dbg{width:72px;height:44px;border:1px solid var(--line);border-radius:8px;background:none;padding:2px}
+.marks{margin-top:8px;font-size:14px}.marks em{font-style:normal;color:var(--mute)}
 .fab{position:fixed;right:16px;bottom:16px;background:var(--ink);color:var(--bg);text-decoration:none;border-radius:999px;padding:12px 18px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:5}
 .fab[hidden]{display:none}
 @media(min-width:900px){.fab{display:none}}
@@ -107,21 +118,35 @@ details ul{margin:4px 0 0;padding-left:1.2em}
 <div class="inapp" id="inapp" hidden><p id="inappMsg"></p><a class="btn" id="inappOpen" href="#">用瀏覽器開啟</a></div>
 <header class="top">
 <svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="15" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="26" cy="26" r="6.5" fill="currentColor"/><path d="M26 2v48M2 26h48" stroke="currentColor" stroke-width="2.5"/></svg>
-<div><h1>一鍵文宣</h1><p class="lede">輸入尺寸和內容，自動排好版面，下載印刷廠可以直接印的 PDF。</p></div>
+<div><h1>一鍵文宣</h1><p class="lede">輸入尺寸和內容自動排版，或上傳自己做好的設計，下載印刷廠可以直接印的 PDF。</p></div>
 </header>
 <main class="app">
 <section aria-label="填寫資料">
+ <div class="mode" role="tablist" aria-label="製作方式"><button type="button" role="tab" id="mode-auto" aria-selected="true">自動排版</button><button type="button" role="tab" id="mode-own" aria-selected="false">上傳我的設計</button></div>
  <div class="step">
   <h2>尺寸</h2>
   <div class="chips" id="presets"></div>
   <div class="dims">
-   <label class="f"><span>寬</span><span class="unit"><input type="number" id="w" inputmode="decimal" min="20" max="2000" step="0.5"></span></label>
-   <label class="f"><span>高</span><span class="unit"><input type="number" id="h" inputmode="decimal" min="20" max="2000" step="0.5"></span></label>
+   <label class="f"><span>寬</span><span class="unit"><input type="number" id="w" inputmode="decimal" min="20" max="5000" step="0.5"></span></label>
+   <label class="f"><span>高</span><span class="unit"><input type="number" id="h" inputmode="decimal" min="20" max="5000" step="0.5"></span></label>
    <label class="f"><span>出血</span><span class="unit"><input type="number" id="bleed" inputmode="decimal" min="0" max="10" step="0.5"></span></label>
   </div>
-  <div class="row"><button type="button" class="btn" id="swap">直式／橫式互換</button><label class="check"><input type="checkbox" id="marks">加裁切線</label></div>
+  <div class="row"><button type="button" class="btn" id="swap">直式／橫式互換</button><button type="button" class="btn" id="fitRatio" hidden>照我的設計調整尺寸</button></div>
  </div>
- <div class="step">
+ <div class="step" id="step-own" hidden>
+  <h2>我的設計</h2>
+  <p class="note"><span>上傳已經做好的設計（JPG、PNG 或 PDF），程式會幫你補出血、轉成印刷檔。用 Canva 的話，選「下載 → PDF 列印」或 PNG。</span></p>
+  <div class="up"><div class="pic tall" id="pic-design">還沒選檔案</div><div class="acts"><label class="btn">選擇檔案<input class="sr" type="file" accept="image/*,application/pdf,.pdf" id="in-design"></label></div></div>
+  <p class="status" id="designStat" aria-live="polite"></p>
+  <fieldset class="fit"><legend>這個檔案是…</legend>
+   <label class="check"><input type="radio" name="fit" value="trim" checked>剛好是成品尺寸，沒有出血（自動補出血）</label>
+   <label class="check"><input type="radio" name="fit" value="bleed">已經含出血</label>
+   <label class="check"><input type="radio" name="fit" value="contain">比例不合，完整保留不裁切（空白處補底色）</label>
+  </fieldset>
+  <label class="f" id="dbgRow" hidden><span>底色<em>預設取設計邊緣的顏色</em></span><input type="color" id="dbg" value="#ffffff"></label>
+  <label class="f" id="dfocusRow" hidden><span>裁切位置<em>比例不合時，拉這裡決定保留哪一邊</em></span><input type="range" id="dfocus" min="0" max="100" value="50"></label>
+ </div>
+ <div class="step" id="step-content">
   <h2>內容</h2>
   <p class="note"><span>已先填好示範內容，請改成你的。空白的欄位不會出現在文宣上。</span><button type="button" class="ghost" id="clear">清空示範內容</button></p>
   <label class="f"><span>店名／品牌</span><input type="text" id="t-brand"></label>
@@ -146,7 +171,7 @@ details ul{margin:4px 0 0;padding-left:1.2em}
   <div class="proof" id="proof"><canvas id="pv" role="img" aria-label="文宣預覽"></canvas></div>
   <div class="legend"><span><i></i>裁切位置</span><span><i class="s"></i>文字安全範圍</span><span>淡紅色會被裁掉</span><label class="check"><input type="checkbox" id="guides" checked>顯示參考線</label></div>
  </div>
- <div class="step">
+ <div class="step" id="step-layout">
   <h2>版面</h2>
   <div class="ai">
    <label class="f"><span>想要的感覺</span><textarea id="vibe" rows="2" placeholder="例如：溫暖、手作感，像巷弄咖啡店"></textarea></label>
@@ -159,15 +184,28 @@ details ul{margin:4px 0 0;padding-left:1.2em}
   <h3>版型・簡約質感</h3><div class="grid tgrid" id="thumbs-classic"></div>
   <h3>配色</h3><div class="grid pals" id="pals"></div>
   <h3>字型</h3><div class="chips" id="fonts"></div>
+  <h3>微調</h3>
+  <div class="adj">
+   <label class="f sl"><span>標題大小<output id="o-title">100%</output></span><input type="range" id="a-title" min="70" max="150" step="5" value="100"></label>
+   <label class="f sl"><span>價格大小<output id="o-price">100%</output></span><input type="range" id="a-price" min="70" max="150" step="5" value="100"></label>
+   <label class="f sl"><span>內文大小<output id="o-body">100%</output></span><input type="range" id="a-body" min="70" max="150" step="5" value="100"></label>
+   <label class="f sl"><span>照片區大小<output id="o-photo">100%</output></span><input type="range" id="a-photo" min="60" max="140" step="5" value="100"></label>
+  </div>
+  <div class="f"><span class="lab">文字對齊</span><div class="chips" id="a-align"><button type="button" class="chip" data-al="auto" aria-pressed="true">照版型</button><button type="button" class="chip" data-al="left" aria-pressed="false">靠左</button><button type="button" class="chip" data-al="center" aria-pressed="false">置中</button></div></div>
+  <label class="check"><input type="checkbox" id="a-custom">使用自己的品牌色</label>
+  <div class="row colors" id="colorRow" hidden><label class="cl">主色<input type="color" id="a-p" value="#e60012"></label><label class="cl">強調色<input type="color" id="a-a" value="#ffe100"></label></div>
+  <div class="row"><button type="button" class="ghost" id="a-reset">微調恢復預設</button></div>
  </div>
  <div class="step">
   <h2>下載</h2>
   <ul class="warns" id="warns" aria-live="polite"></ul>
   <p class="spec" id="spec"></p>
-  <div class="dl"><button type="button" class="primary" id="pdf">下載印刷用 PDF</button><button type="button" class="ghost" id="share" hidden>傳送 PDF（LINE、Email…）</button><button type="button" class="ghost" id="jpg">下載確認用 JPG</button></div>
+  <div class="dl"><button type="button" class="primary" id="pdf">下載印刷用 PDF</button><button type="button" class="ghost" id="share" hidden>傳送 PDF（LINE、Email…）</button><button type="button" class="ghost" id="jpg">下載成品圖 JPG</button></div>
+  <label class="check marks"><input type="checkbox" id="marks">加印刷廠裁切線<em>（四周會多出白邊，一般不用勾）</em></label>
   <p class="status" id="dlstat" aria-live="polite"></p>
   <details><summary>給印刷廠的檔案說明</summary><ul>
-   <li>PDF 已含四邊出血，並設定好成品尺寸（TrimBox）與出血範圍（BleedBox）。</li>
+   <li>PDF 就是「成品＋四邊出血」的大小，沒有白邊；已設定成品尺寸（TrimBox）與出血範圍（BleedBox）。</li>
+   <li>印刷廠要求裁切線時，再勾選「加印刷廠裁切線」。</li>
    <li>解析度 300 dpi；超大海報會自動調低，上方規格會顯示實際數值。</li>
    <li>文字和圖片一起轉成高解析影像，印刷廠不需要另外安裝字型。</li>
    <li>色彩為 RGB，印刷廠轉成 CMYK 時，特別鮮豔的藍、綠、螢光色會略暗一些。</li>
@@ -273,34 +311,37 @@ const pline = (L, pts, lw, c) => L.ops.push({ t: 'pline', pts, lw, c });
 const push = (L, px, py, deg) => L.ops.push({ t: 'push', px, py, rot: deg * Math.PI / 180 });
 const pop = L => L.ops.push({ t: 'pop' });
 const box4 = (L, b, c, r = 0, sk = null, sw = 0) => { R(L, b.x, b.y, b.w, b.h, c, r); if (sk) L.ops.push({ t: 'stroke', x: b.x, y: b.y, w: b.w, h: b.h, r, lw: sw, c: sk }); };
+function mix(h1, h2, t) { const a = parseInt(h1.slice(1), 16), b = parseInt(h2.slice(1), 16), ch = sh => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t); return '#' + [16, 8, 0].map(sh => ch(sh).toString(16).padStart(2, '0')).join(''); }
 function lum(hex) { const n = parseInt(String(hex).slice(1, 7), 16), f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(n >> 16) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255); }
 function starPts(cx, cy, ro, ri, n) { const pts = []; for (let i = 0; i < n * 2; i++) { const r = i % 2 ? ri : ro, a = i * Math.PI / n - Math.PI / 2; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } return pts; }
 function rays(L, cx, cy, len, n, c, a) { for (let i = 0; i < n; i += 2) { const a1 = i * 2 * Math.PI / n, a2 = (i + 1) * 2 * Math.PI / n; poly(L, [[cx, cy], [cx + Math.cos(a1) * len, cy + Math.sin(a1) * len], [cx + Math.cos(a2) * len, cy + Math.sin(a2) * len]], c, a); } }
 function stripes(L, b, sw, c, a) { L.ops.push({ t: 'clip', x: b.x, y: b.y, w: b.w, h: b.h }); for (let k = -b.h; k < b.w; k += sw * 2) poly(L, [[b.x + k, b.y], [b.x + k + sw, b.y], [b.x + k + sw + b.h, b.y + b.h], [b.x + k + b.h, b.y + b.h]], c, a); L.ops.push({ t: 'unclip' }); }
 const hline = (L, x, y, w, lw, c) => R(L, x, y - lw / 2, w, lw, c);
 const lineW = L => clamp(L.u * 0.004, 0.25, 1.4);
+const pf = (L, v, lo = 0.12, hi = 0.75) => clamp(v * L.adj.photo, lo, Math.max(hi, v));
 
 // 把多段文字依比例一起縮放，找出能塞進框裡的最大字級
 function stack(L, box, list, o) {
   const items = list.filter(i => i && (i.space != null || (i.text && String(i.text).trim())));
   if (!items.length || box.h <= 0 || box.w <= 0) return 0;
-  const align = o.align || 'left';
+  const align = o.lock || !L.adj || L.adj.align === 'auto' ? (o.align || 'left') : L.adj.align;
   const plan = k => {
     let tot = 0;
     const res = items.map((it, i) => {
       const gap = i < items.length - 1 ? (it.gap ?? 0.35) * k : 0;
       if (it.space != null) { tot += it.space + gap; return { it, h: it.space, gap }; }
       const size = Math.max(it.min ?? L.minText, it.f * k), lh = it.lh ?? 1.35;
-      const px = it.pill ? size * 0.7 : 0, py = it.pill ? size * 0.42 : 0, ind = it.list ? size * 1.15 : 0;
+      const isList = it.list && align !== 'center';
+      const px = it.pill ? size * 0.7 : 0, py = it.pill ? size * 0.42 : 0, ind = isList ? size * 1.15 : 0;
       const mw = Math.max(size, box.w - 2 * px - ind);
       let lines;
-      if (it.list) {
+      if (isList) {
         lines = [];
         for (const p of String(it.text).split('\n').map(s => s.trim()).filter(Boolean)) wrap(p, size, it.w, L.font, mw).forEach((l, j) => lines.push({ ...l, b: j === 0 }));
       } else lines = (it.balance ? balanced : wrap)(String(it.text), size, it.w, L.font, mw);
       const h = lines.length * size * lh + 2 * py;
       tot += h + gap;
-      return { it, size, lh, px, py, ind, lines, h, gap };
+      return { it, size, lh, px, py, ind, lines, h, gap, isList };
     });
     return { tot, res };
   };
@@ -328,7 +369,7 @@ function stack(L, box, list, o) {
     } else r.lines.forEach((l, i) => {
       const ly = y + i * lineH + top;
       const x = align === 'center' ? box.x + (box.w - l.w) / 2 : align === 'right' ? box.x + box.w - l.w : box.x + r.ind;
-      if (it.list && l.b) {
+      if (r.isList && l.b) {
         if (it.bs === 'check') { const q = r.size * 0.78, bx = box.x + r.size * 0.02, by = ly + r.size * 0.12; R(L, bx, by, q, q, it.bc || it.c, q * 0.18); pline(L, [[bx + q * 0.22, by + q * 0.52], [bx + q * 0.43, by + q * 0.72], [bx + q * 0.8, by + q * 0.28]], q * 0.14, '#FFFFFF'); }
         else C(L, box.x + r.size * 0.38, ly + r.size * 0.5, r.size * 0.17, it.bc || it.c);
       }
@@ -397,18 +438,18 @@ const footH = (L, c) => Math.max(clamp(L.u * 0.12, 8, 110), c.qr ? qrSize(L) : 0
 function footer(L, box, c, o) {
   let tw = box.w;
   if (c.qr) { const q = Math.min(box.h, qrSize(L)); qrOp(L, box.x + box.w - q, box.y + (box.h - q) / 2, q, c.qr); tw -= q + L.m * 0.6; }
-  if (c.contact) stack(L, { x: box.x, y: box.y, w: tw, h: box.h }, [{ text: c.contact, f: 1, w: FONTS[L.font].body, c: o.ink, lh: 1.4 }], { kmax: clamp(L.u * 0.028, 2.6, 18), kmin: L.minText, valign: 'center' });
+  if (c.contact) stack(L, { x: box.x, y: box.y, w: tw, h: box.h }, [{ text: c.contact, f: 1, w: FONTS[L.font].body, c: o.ink, lh: 1.4 }], { kmax: clamp(L.u * 0.028, 2.6, 18) * L.adj.body, kmin: L.minText, valign: 'center', lock: true });
 }
 function blocks(L, c, o) {
-  const F = FONTS[L.font];
+  const F = FONTS[L.font], A = L.adj;
   return {
-    title: { text: c.title, f: 1, w: F.head, c: o.title, lh: 1.18, gap: 0.34, balance: true, min: 4, fx: o.titleFx },
-    sub: { text: c.sub, f: 0.4, w: F.bold, c: o.sub, gap: 0.5, fx: o.subFx },
-    price: { text: c.price, f: o.priceF || 1.25, w: F.head, c: o.price || o.title, lh: 1.04, gap: 0.42, balance: true, min: 4, fx: o.priceFx },
-    hi: { text: c.hi, f: 0.42, w: F.head, c: o.hiInk, pill: { bg: o.hiBg, sk: o.hiSk }, lh: 1.25, gap: 0.55, balance: true },
-    points: { text: c.points, f: 0.31, w: F.body, c: o.body, list: !o.center, bs: o.bs, bc: o.bullet, lh: 1.5, gap: 0.42, fx: o.bodyFx },
-    info: { text: c.info, f: 0.3, w: F.bold, c: o.body, lh: 1.5, gap: 0.45, fx: o.bodyFx },
-    cta: { text: c.cta, f: 0.44, w: F.head, c: o.ctaInk || '#FFFFFF', pill: { bg: o.ctaBg || o.title, sk: o.ctaSk }, arrow: true, lh: 1.2, gap: 0.3, balance: true }
+    title: { text: c.title, f: A.title, w: F.head, c: o.title, lh: 1.18, gap: 0.34, balance: true, min: 4, fx: o.titleFx },
+    sub: { text: c.sub, f: 0.4 * A.body, w: F.bold, c: o.sub, gap: 0.5, fx: o.subFx },
+    price: { text: c.price, f: (o.priceF || 1.25) * A.price, w: F.head, c: o.price || o.title, lh: 1.04, gap: 0.42, balance: true, min: 4, fx: o.priceFx },
+    hi: { text: c.hi, f: 0.42 * A.body, w: F.head, c: o.hiInk, pill: { bg: o.hiBg, sk: o.hiSk }, lh: 1.25, gap: 0.55, balance: true },
+    points: { text: c.points, f: 0.31 * A.body, w: F.body, c: o.body, list: !o.center, bs: o.bs, bc: o.bullet, lh: 1.5, gap: 0.42, fx: o.bodyFx },
+    info: { text: c.info, f: 0.3 * A.body, w: F.bold, c: o.body, lh: 1.5, gap: 0.45, fx: o.bodyFx },
+    cta: { text: c.cta, f: 0.44 * A.body, w: F.head, c: o.ctaInk || '#FFFFFF', pill: { bg: o.ctaBg || o.title, sk: o.ctaSk }, arrow: true, lh: 1.2, gap: 0.3, balance: true }
   };
 }
 
@@ -432,7 +473,7 @@ function badge(L, cx, cy, r, text, o) {
   if (o.shape === 'circle') { C(L, cx, cy, r, o.bg); if (o.sk) ring(L, cx, cy, r, r * 0.05, o.sk); ring(L, cx, cy, r * 0.84, r * 0.025, o.ink, 0.7); }
   else poly(L, starPts(cx, cy, r, r * 0.82, o.n || 16), o.bg, 1, o.sk || null, o.sk ? r * 0.04 : 0);
   const side = r * 1.18;
-  stack(L, { x: cx - side / 2, y: cy - side / 2, w: side, h: side }, [{ text, f: 1, w: FONTS[L.font].head, c: o.ink, lh: 1.05, balance: true, min: L.minText, fx: o.fx }], { kmax: r * 0.62, kmin: L.minText, valign: 'center', align: 'center' });
+  stack(L, { x: cx - side / 2, y: cy - side / 2, w: side, h: side }, [{ text, f: 1, w: FONTS[L.font].head, c: o.ink, lh: 1.05, balance: true, min: L.minText, fx: o.fx }], { kmax: r * 0.62 * Math.min(L.adj.price, 1.25), kmin: L.minText, valign: 'center', align: 'center', lock: true });
   pop(L);
 }
 // 斜放的相片（白框＋影子）
@@ -476,11 +517,11 @@ const TEMPLATES = {
     const bt = c.price || c.hi, bo = { badge: { bg: P.a, ink: P.oa, sk: P.ink, rot: -10 } }, kmax = clamp(u * 0.15, 5, 130), av = bottom - top;
     const seq = [B.title, B.sub, c.price ? B.hi : null, B.points, B.info, B.cta];
     if (L.orient === 'land') {
-      const cw = S.w * 0.4;
+      const cw = S.w * pf(L, 0.4);
       stack(L, { x: S.x, y: top, w: S.w - cw - m, h: av }, seq, { kmax, kmin: 3.2, valign: 'center' });
       showcase(L, { x: S.x + S.w - cw, y: top, w: cw, h: av }, c, bt, bo);
     } else {
-      const sh = (c.photo || bt) ? av * 0.36 : 0;
+      const sh = (c.photo || bt) ? av * pf(L, 0.36) : 0;
       stack(L, { x: S.x, y: top, w: S.w, h: av }, [B.title, B.sub, sh ? { space: sh, key: 'show', gap: 0.45 } : null, ...seq.slice(2)], { kmax, kmin: 3.2, valign: 'center' });
       if (L.slots.show) showcase(L, L.slots.show, c, bt, bo);
     }
@@ -505,10 +546,10 @@ const TEMPLATES = {
       else { const ch = hasRest ? av * 0.44 : av; card = { x: S.x, y: top, w: S.w, h: ch }; list = { x: S.x, y: top + ch + m * 0.8, w: S.w, h: av - ch - m * 0.8 }; }
       box4(L, card, '#FFFFFF', u * 0.02, P.p, Math.max(0.6, u * 0.01));
       let inner = { x: card.x + m * 0.6, y: card.y + m * 0.5, w: card.w - m * 1.2, h: card.h - m };
-      if (c.photo && (c.price || c.hi)) { const pw = inner.w * 0.42; photo(L, { x: inner.x, y: inner.y, w: pw, h: inner.h }, c, { r: u * 0.012 }); inner = { ...inner, x: inner.x + pw + m * 0.5, w: inner.w - pw - m * 0.5 }; }
+      if (c.photo && (c.price || c.hi)) { const pw = inner.w * pf(L, 0.42); photo(L, { x: inner.x, y: inner.y, w: pw, h: inner.h }, c, { r: u * 0.012 }); inner = { ...inner, x: inner.x + pw + m * 0.5, w: inner.w - pw - m * 0.5 }; }
       else if (c.photo) photo(L, inner, c, { r: u * 0.012 });
-      const items = c.price ? [{ ...B.hi, f: 0.3, gap: 0.3 }, { ...B.price, f: 1 }] : c.hi ? [{ ...B.hi, pill: null, f: 1, c: P.p, balance: true, fx: B.price.fx }] : [];
-      if (items.length) stack(L, inner, items, { kmax: inner.h * 0.62, kmin: 3.2, valign: 'center', align: 'center' });
+      const items = c.price ? [{ ...B.hi, f: 0.3 * L.adj.body, gap: 0.3 }, { ...B.price, f: L.adj.price }] : c.hi ? [{ ...B.hi, pill: null, f: L.adj.price, c: P.p, balance: true, fx: B.price.fx }] : [];
+      if (items.length) stack(L, inner, items, { kmax: inner.h * 0.62 * Math.min(L.adj.price, 1.2), kmin: 3.2, valign: 'center', align: 'center', lock: true });
     }
     if (hasRest && list.h > 0) stack(L, list, rest, { kmax: clamp(u * 0.11, 4, 80), kmin: 3, valign: 'center' });
   } },
@@ -522,10 +563,10 @@ const TEMPLATES = {
     const big = c.price || c.hi || c.title, av = bottom - top;
     const B = blocks(L, c, { title: P.ink, sub: P.p, hiBg: P.p, hiInk: P.op, body: P.ink, bullet: P.p, ctaBg: P.ink, ctaInk: '#FFFFFF' });
     const rest = [big === c.title ? null : B.title, B.sub, c.price && c.hi ? B.hi : null, B.points, B.info, B.cta];
-    const bigItem = { text: big, f: 1, w: FONTS[L.font].head, c: P.p, lh: 1.02, balance: true, min: 4, fx: { sk: '#FFFFFF', sw: 0.05, sh: P.ink } };
+    const bigItem = { text: big, f: big === c.title ? L.adj.title : L.adj.price, w: FONTS[L.font].head, c: P.p, lh: 1.02, balance: true, min: 4, fx: { sk: '#FFFFFF', sw: 0.05, sh: P.ink } };
     const drawBig = sl => {
       C(L, sl.x + sl.w / 2, sl.y + sl.h / 2, Math.min(sl.w, sl.h) * 0.5, P.a);
-      stack(L, { x: sl.x + sl.w * 0.02, y: sl.y, w: sl.w * 0.96, h: sl.h }, [bigItem], { kmax: sl.h * 0.8, kmin: 4, valign: 'center', align: 'center' });
+      stack(L, { x: sl.x + sl.w * 0.02, y: sl.y, w: sl.w * 0.96, h: sl.h }, [bigItem], { kmax: sl.h * 0.8 * Math.min(L.adj.price, 1.2), kmin: 4, valign: 'center', align: 'center', lock: true });
     };
     if (land) {
       const bw = S.w * 0.5;
@@ -548,7 +589,7 @@ const TEMPLATES = {
     const inner = { x: S.x + m * 0.2, y: S.y + m * 0.2, w: S.w - m * 0.4, h: S.h - m * 0.4 };
     const stub = !!(c.qr || c.contact), nr = u * 0.035, dash = [u * 0.018, u * 0.012];
     const B = blocks(L, c, { title: P.ink, sub: P.ink, price: P.p, priceFx: { sh: P.a }, hiBg: P.a, hiInk: P.oa, body: P.ink, center: true, ctaBg: P.p, ctaInk: P.op });
-    const main = [c.brand ? { text: c.brand.replace(/\n/g, ' '), f: 0.24, w: F.bold, c: P.p, gap: 0.35 } : null, B.title, B.sub, B.price, B.hi, { ...B.points, f: 0.26 }, { ...B.info, f: 0.26 }, B.cta];
+    const main = [c.brand ? { text: c.brand.replace(/\n/g, ' '), f: 0.24, w: F.bold, c: P.p, gap: 0.35 } : null, B.title, B.sub, B.price, B.hi, { ...B.points, f: 0.26 * L.adj.body }, { ...B.info, f: 0.26 * L.adj.body }, B.cta];
     let mb = inner;
     if (stub && land) {
       const dx = inner.x + inner.w * 0.7;
@@ -558,7 +599,7 @@ const TEMPLATES = {
       const sb = { x: dx + m * 0.6, y: inner.y, w: inner.x + inner.w - dx - m * 0.6, h: inner.h };
       const q = c.qr ? Math.min(sb.w, qrSize(L), sb.h * 0.6) : 0;
       if (q) qrOp(L, sb.x + (sb.w - q) / 2, sb.y + (c.contact ? 0 : (sb.h - q) / 2), q, c.qr);
-      if (c.contact) stack(L, { x: sb.x, y: sb.y + q + (q ? m * 0.4 : 0), w: sb.w, h: sb.h - q - (q ? m * 0.4 : 0) }, [{ text: c.contact, f: 1, w: F.body, c: P.ink, lh: 1.4 }], { kmax: clamp(u * 0.028, 2.6, 18), kmin: L.minText, valign: q ? 'top' : 'center', align: 'center' });
+      if (c.contact) stack(L, { x: sb.x, y: sb.y + q + (q ? m * 0.4 : 0), w: sb.w, h: sb.h - q - (q ? m * 0.4 : 0) }, [{ text: c.contact, f: 1, w: F.body, c: P.ink, lh: 1.4 }], { kmax: clamp(u * 0.028, 2.6, 18), kmin: L.minText, valign: q ? 'top' : 'center', align: 'center', lock: true });
     } else if (stub) {
       const fh = footH(L, c), dy = inner.y + inner.h - fh - m * 0.5;
       C(L, card.x, dy, nr, P.p); C(L, card.x + card.w, dy, nr, P.p);
@@ -567,9 +608,9 @@ const TEMPLATES = {
       mb = { ...inner, h: dy - inner.y - m * 0.5 };
     }
     if (c.photo) {
-      const ph = land ? 0 : mb.h * 0.28;
+      const ph = land ? 0 : mb.h * pf(L, 0.28);
       if (ph) { stack(L, mb, [main[0], { space: ph, key: 'ph', gap: 0.4 }, ...main.slice(1)], { kmax: clamp(u * 0.11, 5, 100), kmin: 3.2, valign: 'center', align: 'center' }); if (L.slots.ph) photo(L, L.slots.ph, c, { r: u * 0.015 }); }
-      else { const pw = mb.w * 0.4; photo(L, { x: mb.x, y: mb.y, w: pw, h: mb.h }, c, { r: u * 0.015 }); stack(L, { ...mb, x: mb.x + pw + m * 0.6, w: mb.w - pw - m * 0.6 }, main, { kmax: clamp(u * 0.11, 5, 100), kmin: 3.2, valign: 'center', align: 'center' }); }
+      else { const pw = mb.w * pf(L, 0.4); photo(L, { x: mb.x, y: mb.y, w: pw, h: mb.h }, c, { r: u * 0.015 }); stack(L, { ...mb, x: mb.x + pw + m * 0.6, w: mb.w - pw - m * 0.6 }, main, { kmax: clamp(u * 0.11, 5, 100), kmin: 3.2, valign: 'center', align: 'center' }); }
     } else stack(L, mb, main, { kmax: clamp(u * 0.11, 5, 100), kmin: 3.2, valign: 'center', align: 'center' });
   } },
   diagonal: { cat: 'ad', n: '斜切動感', d: '照片斜切加強調色斜帶，畫面有速度感；適合健身、運動、車行、活動宣傳', draw(L, c) {
@@ -577,11 +618,11 @@ const TEMPLATES = {
     R(L, 0, 0, W, H, P.bg);
     let pts, band, region, text;
     if (!land) {
-      const y1 = T.y + T.h * 0.41, y2 = T.y + T.h * 0.29;
+      const y1 = T.y + T.h * pf(L, 0.41), y2 = T.y + T.h * pf(L, 0.29);
       pts = [[0, 0], [W, 0], [W, y2], [0, y1]]; band = [[0, y1], [W, y2], [W, y2 + t], [0, y1 + t]]; region = { x: 0, y: 0, w: W, h: y1 };
       text = { x: S.x, y: y1 + t + m * 0.7, w: S.w };
     } else {
-      const x1 = T.x + T.w * 0.5, x2 = T.x + T.w * 0.38;
+      const x1 = T.x + T.w * pf(L, 0.5), x2 = T.x + T.w * pf(L, 0.38);
       pts = [[0, 0], [x1, 0], [x2, H], [0, H]]; band = [[x1, 0], [x1 + t, 0], [x2 + t, H], [x2, H]]; region = { x: 0, y: 0, w: x1, h: H };
       text = { x: x1 + t + m * 0.8, y: S.y, w: S.x + S.w - (x1 + t + m * 0.8) };
     }
@@ -612,11 +653,11 @@ const TEMPLATES = {
     const y2 = bub.y + bub.h + tail + m * 0.6;
     const rest = [c.price ? B.hi : null, B.points, B.info, B.cta];
     if (land) {
-      const cw = S.w * 0.4;
+      const cw = S.w * pf(L, 0.4);
       showcase(L, { x: S.x + S.w - cw, y: top, w: cw, h: av }, c, bt, bo);
       stack(L, { x: S.x, y: y2, w: S.w - cw - m, h: bottom - y2 }, rest, { kmax: clamp(u * 0.11, 4, 90), kmin: 3, valign: 'center' });
     } else {
-      const sh = (c.photo || bt) ? (bottom - y2) * 0.48 : 0;
+      const sh = (c.photo || bt) ? (bottom - y2) * pf(L, 0.48) : 0;
       stack(L, { x: S.x, y: y2, w: S.w, h: bottom - y2 }, [sh ? { space: sh, key: 'show', gap: 0.4 } : null, ...rest], { kmax: clamp(u * 0.11, 4, 90), kmin: 3, valign: 'center' });
       if (L.slots.show) showcase(L, L.slots.show, c, bt, bo);
     }
@@ -629,9 +670,9 @@ const TEMPLATES = {
     if (!L.small) { const fr = m * 0.45; L.ops.push({ t: 'stroke', x: T.x + fr, y: T.y + fr, w: T.w - 2 * fr, h: T.h - 2 * fr, r: u * 0.03, lw: lineW(L) * 1.6, c: n2, glow: n2 }); }
     const { top, bottom } = chrome(L, c, { brandInk: n2, footInk: '#EDEAF7', footLine: 'rgba(255,255,255,0.35)' });
     const B = blocks(L, c, { title: '#FFFFFF', titleFx: { glow: n1 }, sub: n2, price: '#FFFFFF', priceFx: { glow: n2 }, hiBg: 'rgba(0,0,0,0)', hiSk: n1, hiInk: '#FFFFFF', body: '#E8E6F5', center: true, ctaBg: n1, ctaInk: '#0E0B1C' });
-    const av = bottom - top, ph = c.photo ? av * (L.orient === 'land' ? 0 : 0.3) : 0;
+    const av = bottom - top, ph = c.photo ? av * (L.orient === 'land' ? 0 : pf(L, 0.3)) : 0;
     if (c.photo && L.orient === 'land') {
-      const pw = S.w * 0.42;
+      const pw = S.w * pf(L, 0.42);
       L.ops.push({ t: 'stroke', x: S.x, y: top, w: pw, h: av, r: u * 0.02, lw: lineW(L) * 1.6, c: n1, glow: n1 });
       photo(L, { x: S.x, y: top, w: pw, h: av }, c, { r: u * 0.02 });
       stack(L, { x: S.x + pw + m, y: top, w: S.w - pw - m, h: av }, [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], { kmax: clamp(u * 0.13, 5, 110), kmin: 3.2, valign: 'center', align: 'center' });
@@ -643,7 +684,7 @@ const TEMPLATES = {
   tape: { cat: 'ad', n: '封鎖膠帶', d: '斜貼警示膠帶重複標語，強烈搶眼；適合限時搶購、新品上市、清倉', draw(L, c) {
     const { T, S, W, H, pal: P, m, u } = L, land = L.orient === 'land';
     R(L, 0, 0, W, H, P.bg);
-    const pw = land ? T.x + T.w * 0.48 : W, ph = land ? H : T.y + T.h * 0.36;
+    const pw = land ? T.x + T.w * pf(L, 0.48) : W, ph = land ? H : T.y + T.h * pf(L, 0.36);
     if (c.photo) photo(L, { x: 0, y: 0, w: pw, h: ph }, c); else { R(L, 0, 0, pw, ph, P.p); stripes(L, { x: 0, y: 0, w: pw, h: ph }, u * 0.06, P.op, 0.1); }
     brandTag(L, S.x, S.y, clamp(u * 0.07, 5, 28), c, { bg: '#FFFFFF', ink: P.ink, maxW: land ? pw - S.x - m : S.w * 0.8 });
     const tt = c.hi || c.price || c.brand || (c.title || '').split('\n')[0];
@@ -669,7 +710,7 @@ const TEMPLATES = {
     const B = blocks(L, c, { title: P.p, sub: P.ink, price: P.p, hiBg: P.a, hiInk: P.oa, body: P.ink, bullet: P.p, ctaBg: P.ink, ctaInk: '#FFFFFF' });
     const seq = [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], foot = c.contact || c.qr, fh = footH(L, c), kmax = clamp(u * 0.13, 5, 110);
     if (L.orient !== 'land') {
-      const ph = T.y + T.h * (L.orient === 'sq' ? 0.32 : L.small ? 0.38 : 0.42);
+      const ph = T.y + T.h * pf(L, L.orient === 'sq' ? 0.32 : L.small ? 0.38 : 0.42);
       photo(L, { x: 0, y: 0, w: W, h: ph }, c);
       brandTag(L, S.x, S.y, clamp(u * 0.075, 5, 30), c, { bg: '#FFFFFF', ink: P.ink });
       let bottom = S.y + S.h;
@@ -677,7 +718,7 @@ const TEMPLATES = {
       const y0 = ph + m * 0.7;
       stack(L, { x: S.x, y: y0, w: S.w, h: bottom - y0 }, seq, { kmax, kmin: 3.2, valign: 'center' });
     } else {
-      const sx = T.x + T.w * 0.46, X = sx + m, w = S.x + S.w - X;
+      const sx = T.x + T.w * pf(L, 0.46), X = sx + m, w = S.x + S.w - X;
       photo(L, { x: 0, y: 0, w: sx, h: H }, c);
       brandTag(L, S.x, S.y, clamp(u * 0.075, 5, 30), c, { bg: '#FFFFFF', ink: P.ink, maxW: sx - S.x - m * 0.5 });
       let bottom = S.y + S.h;
@@ -711,11 +752,11 @@ const TEMPLATES = {
     const B = blocks(L, c, { title: P.op, sub: P.op, price: P.a, priceFx: { sh: P.ink }, hiBg: P.a, hiInk: P.oa, body: P.op, bullet: P.a, ctaBg: P.bg, ctaInk: P.p });
     const kmax = clamp(u * 0.17, 5, 130);
     if (c.photo && L.orient === 'land') {
-      const pw = S.w * 0.38;
+      const pw = S.w * pf(L, 0.38);
       photo(L, { x: S.x + S.w - pw, y, w: pw, h: bottom - y }, c, { r: u * 0.03 });
       stack(L, { x: S.x, y, w: S.w - pw - m, h: bottom - y }, [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], { kmax, kmin: 3.2, valign: 'center' });
     } else {
-      const ph = c.photo ? (bottom - y) * 0.3 : 0;
+      const ph = c.photo ? (bottom - y) * pf(L, 0.3) : 0;
       stack(L, { x: S.x, y, w: S.w, h: bottom - y }, [B.title, B.sub, B.price, ph ? { space: ph, key: 'ph', gap: 0.5 } : null, B.hi, B.points, B.info, B.cta], { kmax, kmin: 3.2, valign: c.photo ? 'top' : 'center' });
       if (L.slots.ph) photo(L, L.slots.ph, c, { r: u * 0.03 });
     }
@@ -731,11 +772,11 @@ const TEMPLATES = {
     const B = blocks(L, c, { title: P.ink, sub: P.p, price: P.p, priceF: 1.1, hiBg: P.p, hiInk: P.op, body: P.ink, bullet: P.p, ctaBg: P.ink, ctaInk: '#FFFFFF' });
     const kmax = clamp(u * 0.12, 5, 100);
     if (L.orient === 'land') {
-      const pw = S.w * 0.46;
+      const pw = S.w * pf(L, 0.46);
       photo(L, { x: S.x + S.w - pw, y, w: pw, h: bottom - y }, c);
       stack(L, { x: S.x, y, w: S.w - pw - m, h: bottom - y }, [B.title, B.sub, B.price, B.hi, B.points, B.info, B.cta], { kmax, kmin: 3.2, valign: 'top' });
     } else {
-      const ph = (bottom - y) * 0.34;
+      const ph = (bottom - y) * pf(L, 0.34);
       stack(L, { x: S.x, y, w: S.w, h: bottom - y }, [B.title, B.sub, { space: ph, key: 'ph', gap: 0.55 }, B.price, B.hi, B.points, B.info, B.cta], { kmax, kmin: 3.2, valign: 'top' });
       if (L.slots.ph) photo(L, L.slots.ph, c);
     }
@@ -751,13 +792,13 @@ const TEMPLATES = {
       pad = m * 0.25;
     }
     const box = { x: S.x + pad, y: S.y + pad, w: S.w - 2 * pad, h: S.h - 2 * pad };
-    const land = L.orient === 'land', d = c.photo ? Math.min(box.w * 0.55, box.h * (land ? 0.22 : 0.3)) : 0, q = c.qr ? qrSize(L) : 0, lg = c.logo ? clamp(u * (land ? 0.07 : 0.09), 6, 40) : 0;
+    const land = L.orient === 'land', d = c.photo ? Math.min(box.w * pf(L, 0.55, 0.2, 0.9), box.h * pf(L, land ? 0.22 : 0.3)) : 0, q = c.qr ? qrSize(L) : 0, lg = c.logo ? clamp(u * (land ? 0.07 : 0.09), 6, 40) : 0;
     const B = blocks(L, c, { title: P.ink, sub: P.p, price: P.p, priceF: 1.1, hiBg: P.p, hiInk: P.op, body: P.ink, center: true, ctaBg: P.p, ctaInk: P.op });
     stack(L, box, [
       d ? { space: d, key: 'ph', gap: 0.45 } : null,
       lg ? { space: lg, key: 'logo', gap: 0.25 } : null,
       c.brand ? { text: c.brand.replace(/\n/g, ' '), f: 0.24, w: F.bold, c: P.p, gap: 0.35 } : null,
-      B.title, B.sub, B.price, B.hi, { ...B.points, f: 0.28 }, { ...B.info, f: 0.28, gap: 0.45 }, B.cta,
+      B.title, B.sub, B.price, B.hi, { ...B.points, f: 0.28 * L.adj.body }, { ...B.info, f: 0.28 * L.adj.body, gap: 0.45 }, B.cta,
       c.contact ? { text: c.contact, f: 0.24, w: F.body, c: P.ink, lh: 1.45, gap: 0.4 } : null,
       q ? { space: q, key: 'qr', gap: 0 } : null
     ], { kmax: clamp(u * 0.12, 5, 100), kmin: 3.2, valign: 'center', align: 'center' });
@@ -773,8 +814,8 @@ const TEMPLATES = {
     const X = Math.max(S.x, T.x + T.w * 0.045 + m * 0.9);
     let box = { x: X, y: S.y, w: S.x + S.w - X, h: S.h };
     if (c.photo) {
-      if (L.orient === 'land') { const pw = box.w * 0.36; photo(L, { x: box.x + box.w - pw, y: box.y, w: pw, h: box.h }, c, { r: u * 0.02 }); box = { ...box, w: box.w - pw - m * 0.8 }; }
-      else { const ph = box.h * 0.3; photo(L, { x: box.x, y: box.y, w: box.w, h: ph }, c, { r: u * 0.02 }); box = { ...box, y: box.y + ph + m * 0.7, h: box.h - ph - m * 0.7 }; }
+      if (L.orient === 'land') { const pw = box.w * pf(L, 0.36); photo(L, { x: box.x + box.w - pw, y: box.y, w: pw, h: box.h }, c, { r: u * 0.02 }); box = { ...box, w: box.w - pw - m * 0.8 }; }
+      else { const ph = box.h * pf(L, 0.3); photo(L, { x: box.x, y: box.y, w: box.w, h: ph }, c, { r: u * 0.02 }); box = { ...box, y: box.y + ph + m * 0.7, h: box.h - ph - m * 0.7 }; }
     }
     const bt = brandTag(L, box.x, box.y, clamp(u * 0.09, 5, 26), c, { bg: null, ink: P.p, maxW: box.w });
     if (bt) box = { ...box, y: box.y + bt.h + m * 0.5, h: box.h - bt.h - m * 0.5 };
@@ -789,12 +830,38 @@ function layout(spec, c, style) {
   const b = spec.bleed, W = spec.w + 2 * b, H = spec.h + 2 * b, u = Math.min(spec.w, spec.h);
   const T = { x: b, y: b, w: spec.w, h: spec.h }, m = clamp(u * 0.06, 3.5, 25);
   const S = { x: T.x + m, y: T.y + m, w: T.w - 2 * m, h: T.h - 2 * m };
-  const warns = [];
-  const L = { ops: [], slots: {}, warns, W, H, T, S, u, m, b, font: FONTS[style.font] ? style.font : 'sans', pal: PALETTES[style.palette] || PALETTES.sunset,
+  const warns = [], adj = Object.assign({ title: 1, price: 1, body: 1, photo: 1, align: 'auto', custom: false }, style.adj || {});
+  let pal = PALETTES[style.palette] || PALETTES.sunset;
+  if (adj.custom && /^#[0-9a-f]{6}$/i.test(adj.p || '') && /^#[0-9a-f]{6}$/i.test(adj.a || '')) pal = { ...pal, p: adj.p, op: lum(adj.p) > 0.4 ? '#1A1A1A' : '#FFFFFF', a: adj.a, oa: lum(adj.a) > 0.4 ? '#1A1A1A' : '#FFFFFF', s: mix(adj.p, '#FFFFFF', 0.86) };
+  const L = { ops: [], slots: {}, warns, adj, W, H, T, S, u, m, b, font: FONTS[style.font] ? style.font : 'sans', pal,
     small: u < 80, minText: u < 80 ? 1.9 : 2.3, orient: spec.w / spec.h > 1.15 ? 'land' : spec.h / spec.w > 1.15 ? 'port' : 'sq',
     warn(s) { if (!warns.includes(s)) warns.push(s); } };
   (TEMPLATES[style.template] || TEMPLATES.photoTop).draw(L, c);
   if (b < 2) L.warn('出血小於 2 mm，多數印刷廠要求 3 mm。');
+  return L;
+}
+
+// 上傳自己的設計：只負責補出血、套尺寸
+function layoutOwn(spec, d, o) {
+  const b = spec.bleed, W = spec.w + 2 * b, H = spec.h + 2 * b, u = Math.min(spec.w, spec.h);
+  const T = { x: b, y: b, w: spec.w, h: spec.h }, m = clamp(u * 0.03, 3, 10);
+  const S = { x: T.x + m, y: T.y + m, w: T.w - 2 * m, h: T.h - 2 * m }, warns = [];
+  const L = { ops: [], slots: {}, warns, adj: { title: 1, price: 1, body: 1, photo: 1, align: 'auto' }, W, H, T, S, u, m, b, font: 'sans', pal: PALETTES.sale, small: u < 80, minText: 1.9, orient: 'port', own: true, warn(s) { if (!warns.includes(s)) warns.push(s); } };
+  if (!d) { R(L, 0, 0, W, H, '#EEF0F3'); stack(L, S, [{ text: '上傳設計後會顯示在這裡', f: 1, w: 700, c: '#8A9099' }], { kmax: u * 0.06, kmin: 2, valign: 'center', align: 'center', lock: true }); L.empty = true; return L; }
+  const A = T.w / T.h, tb = o.fit === 'bleed' ? { x: 0, y: 0, w: W, h: H } : T, a = d.w / d.h;
+  if (o.fit === 'contain') {
+    R(L, 0, 0, W, H, o.bg || '#FFFFFF');
+    const sc = Math.min(T.w / d.w, T.h / d.h), dw = d.w * sc, dh = d.h * sc;
+    L.ops.push({ t: 'img', img: d.img, small: d.small, iw: d.w, ih: d.h, x: T.x + (T.w - dw) / 2, y: T.y + (T.h - dh) / 2, w: dw, h: dh, fit: 'contain' });
+    if (Math.abs(a / A - 1) > 0.02) L.warn('設計比例和成品不同，空白的地方已補上底色。');
+  } else {
+    R(L, 0, 0, W, H, '#FFFFFF');
+    L.ops.push({ t: 'design', img: d.img, small: d.small, iw: d.w, ih: d.h, x: tb.x, y: tb.y, w: tb.w, h: tb.h, f: o.focus ?? 0.5, mirror: o.fit === 'trim', cw: W, ch: H });
+    const diff = Math.abs(a / (tb.w / tb.h) - 1);
+    if (diff > 0.02) L.warn(`設計比例和成品不同，${a > tb.w / tb.h ? '左右' : '上下'}會被裁掉約 ${Math.round(diff / (1 + diff) * 100)}%。可以按「照我的設計調整尺寸」，或改選「完整保留」。`);
+  }
+  const cover = o.fit === 'contain' ? Math.min(T.w / d.w, T.h / d.h) : Math.max(tb.w / d.w, tb.h / d.h), ppi = 25.4 / cover, need = u > 400 ? 100 : 150;
+  if (ppi < need) L.warn(`設計檔解析度約 ${Math.round(ppi)} dpi，印出來可能會模糊（這個尺寸建議 ${need} dpi 以上），請匯出更大的檔案。`);
   return L;
 }
 
@@ -866,6 +933,20 @@ function paint(ctx, ops, s, oy = 0, ox = 0, full = false) {
       for (let r = 0; r < n; r++) for (let q = 0; q < n; q++) if (mtx[r][q]) ctx.rect((o.x + (qz + q) * cell) * s - ox, (o.y + (qz + r) * cell) * s - oy, cell * s, cell * s);
       ctx.fill(); break;
     }
+    case 'design': {
+      const im = full ? o.img : (o.small || o.img), iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, A = o.w / o.h, a = o.iw / o.ih;
+      let fx = 0, fy = 0, fw = 1, fh = 1;
+      if (a > A) { fw = A / a; fx = (1 - fw) * o.f; } else { fh = a / A; fy = (1 - fh) * o.f; }
+      const sx = fx * iw, sy = fy * ih, sw = fw * iw, sh = fh * ih, w = o.w * s, h = o.h * s;
+      ctx.save(); ctx.beginPath(); ctx.rect(-ox, -oy, o.cw * s, o.ch * s); ctx.clip(); ctx.imageSmoothingQuality = 'high';
+      const tiles = o.mirror ? [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1], [0, 0]] : [[0, 0]];
+      for (const [i, j] of tiles) {
+        const X = (o.x + i * o.w) * s - ox, Y = (o.y + j * o.h) * s - oy, e = i || j ? 1 : 0;
+        ctx.save(); ctx.translate(X + (i ? w : 0), Y + (j ? h : 0)); ctx.scale(i ? -1 : 1, j ? -1 : 1);
+        ctx.drawImage(im, sx, sy, sw, sh, -e, -e, w + 2 * e, h + 2 * e); ctx.restore();
+      }
+      ctx.restore(); break;
+    }
     case 'clip': ctx.save(); shape(ctx, o, s, ox, oy); ctx.clip(); break;
     case 'unclip': ctx.restore(); break;
   }
@@ -921,12 +1002,12 @@ async function buildPDF(L, marks, title, onProg) {
   put(x + `trailer\n<</Size ${N}/Root 1 0 R/Info 5 0 R>>\nstartxref\n${xo}\n%%EOF\n`);
   return { blob: new Blob(parts, { type: 'application/pdf' }), dpi: Math.round(s * 25.4) };
 }
-async function buildJPG(L) {
-  const s = Math.min(150 / 25.4, Math.sqrt(12e6 / (L.T.w * L.T.h)));
+async function buildJPG(L, dpi = 300) {
+  const s = Math.min(dpi / 25.4, Math.sqrt(16e6 / (L.T.w * L.T.h)));
   const cv = document.createElement('canvas'); cv.width = Math.round(L.T.w * s); cv.height = Math.round(L.T.h * s);
   const ctx = cv.getContext('2d'); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, cv.width, cv.height);
   paint(ctx, L.ops, s, L.b * s, L.b * s, true);
-  return new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('jpeg')), 'image/jpeg', 0.9));
+  return new Promise((res, rej) => cv.toBlob(b => { if (b) { b.dpi = Math.round(s * 25.4); res(b); } else rej(new Error('jpeg')); }, 'image/jpeg', 0.92));
 }
 
 /* ===== 推薦：有 AI 時問 AI，沒有時用關鍵字 ===== */
@@ -1003,18 +1084,23 @@ async function endpointJSON(prompt) {
 const FIELDS = ['brand', 'title', 'sub', 'hi', 'price', 'cta', 'points', 'info', 'contact', 'qr'];
 const SAMPLE = { brand: '好日子早午餐', title: '早晨的好日子\n從這裡開始', sub: '現烤麵包・手沖咖啡・在地小農蔬菜', hi: '開幕首週 全品項', price: '85折', cta: '掃碼預約座位', points: '每日現烤酸種麵包\n手沖單品咖啡 120 元起\n寵物友善，可預約包場', info: '12 月 6 日（六）開幕\n營業 07:30–15:00・週二公休', contact: '台中市西區範例路 12 號\n04-2300-0000', qr: 'https://example.com' };
 const PRESETS = [['A5 傳單', 148, 210], ['A4 傳單', 210, 297], ['A3 海報', 297, 420], ['A2 海報', 420, 594], ['名片', 90, 54], ['明信片', 148, 100], ['正方形', 210, 210], ['DL 長條', 99, 210]];
-const KEY = 'yijian-wenxuan-v2', OLD_KEY = 'yijian-wenxuan-v1';
-const state = { spec: { w: 148, h: 210, bleed: 3, marks: true }, text: { ...SAMPLE }, style: { template: 'burst', palette: 'sale', font: 'sans' }, vibe: '熱鬧、促銷感強、吸睛', focus: 50, guides: true, photo: null, logo: null, opts: [], undo: null, L: null };
+const KEY = 'yijian-wenxuan-v3', OLD_KEYS = ['yijian-wenxuan-v2', 'yijian-wenxuan-v1'];
+const ADJ0 = { title: 1, price: 1, body: 1, photo: 1, align: 'auto', custom: false, p: '#E60012', a: '#FFE100' };
+const state = { mode: 'auto', design: null, fit: 'trim', dbg: '#FFFFFF', dfocus: 50, adj: { ...ADJ0 }, spec: { w: 148, h: 210, bleed: 3, marks: false }, text: { ...SAMPLE }, style: { template: 'burst', palette: 'sale', font: 'sans' }, vibe: '熱鬧、促銷感強、吸睛', focus: 50, guides: true, photo: null, logo: null, opts: [], undo: null, L: null };
 try {
-  const raw = localStorage.getItem(KEY), j = JSON.parse(raw || localStorage.getItem(OLD_KEY) || 'null');
+  const raw = localStorage.getItem(KEY), old = OLD_KEYS.map(k => localStorage.getItem(k)).find(Boolean), j = JSON.parse(raw || old || 'null');
   if (j) {
     Object.assign(state.spec, j.spec);
+    if (!raw) state.spec.marks = false;
+    if (raw && j.adj) Object.assign(state.adj, j.adj);
+    if (raw && (j.mode === 'own' || j.mode === 'auto')) state.mode = j.mode;
+    if (raw && ['trim', 'bleed', 'contain'].includes(j.fit)) state.fit = j.fit;
     if (j.text) for (const k of FIELDS) state.text[k] = typeof j.text[k] === 'string' ? j.text[k] : '';
     if (raw && j.style && TEMPLATES[j.style.template]) Object.assign(state.style, j.style);
     if (raw && typeof j.vibe === 'string') state.vibe = j.vibe;
   }
 } catch (e) { /* 沒有儲存資料 */ }
-function save() { try { localStorage.setItem(KEY, JSON.stringify({ spec: state.spec, text: state.text, style: state.style, vibe: state.vibe })); } catch (e) { /* 無法儲存時略過 */ } }
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ spec: state.spec, text: state.text, style: state.style, vibe: state.vibe, adj: state.adj, mode: state.mode, fit: state.fit })); } catch (e) { /* 無法儲存時略過 */ } }
 function content() { const t = {}; for (const k of FIELDS) t[k] = String(state.text[k] || '').trim(); return { ...t, photo: state.photo, logo: state.logo, focus: state.focus / 100 }; }
 
 /* ===== 字型載入 ===== */
@@ -1043,6 +1129,11 @@ function fillInputs() {
   $('#w').value = state.spec.w; $('#h').value = state.spec.h; $('#bleed').value = state.spec.bleed; $('#marks').checked = state.spec.marks;
   for (const k of FIELDS) $('#t-' + k).value = state.text[k] || '';
   $('#vibe').value = state.vibe;
+  for (const k of ['title', 'price', 'body', 'photo']) { const v = Math.round(state.adj[k] * 100); $('#a-' + k).value = v; $('#o-' + k).textContent = v + '%'; }
+  $('#a-custom').checked = !!state.adj.custom; $('#colorRow').hidden = !state.adj.custom; $('#a-p').value = state.adj.p.toLowerCase(); $('#a-a').value = state.adj.a.toLowerCase();
+  document.querySelectorAll('input[name=fit]').forEach(r => { r.checked = r.value === state.fit; });
+  $('#dbg').value = state.dbg.toLowerCase(); $('#dbgRow').hidden = state.fit !== 'contain';
+  setMode(state.mode, true);
 }
 function markPickers() {
   const { w, h } = state.spec;
@@ -1050,6 +1141,7 @@ function markPickers() {
   document.querySelectorAll('.tgrid .thumb').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === state.style.template));
   document.querySelectorAll('#pals .sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === state.style.palette));
   document.querySelectorAll('#fonts .chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.f === state.style.font));
+  document.querySelectorAll('#a-align .chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.al === state.adj.align));
   document.querySelectorAll('#opts .thumb').forEach(b => { const o = state.opts[b.dataset.o]; b.setAttribute('aria-pressed', !!o && o.template === state.style.template && o.palette === state.style.palette && o.font === state.style.font); });
 }
 let lastW = 0;
@@ -1087,10 +1179,12 @@ function thumbTo(cv, L, size) {
 function showInfo(L) {
   const { w, h, bleed, marks } = state.spec;
   const dpi = Math.round(exportScale(L) * 25.4);
-  $('#spec').textContent = `成品 ${w} × ${h} mm・含出血 ${w + 2 * bleed} × ${h + 2 * bleed} mm・${dpi} dpi・${marks ? '含裁切線' : '無裁切線'}`;
+  $('#spec').textContent = `成品 ${w} × ${h} mm・PDF ${w + 2 * bleed} × ${h + 2 * bleed} mm（含出血）・${dpi} dpi・${marks ? '含裁切線' : '無白邊'}`;
   const ul = $('#warns'); ul.textContent = '';
-  const list = L.warns.length ? L.warns : ['檢查通過：文字都在安全範圍內，可以下載印刷。'];
-  for (const t of list) { const li = document.createElement('li'); li.textContent = t; if (!L.warns.length) li.className = 'ok'; ul.append(li); }
+  const warns = [...L.warns];
+  if (dpi < 100) warns.push(`這個尺寸會輸出約 ${dpi} dpi，適合遠看的大圖（帆布、看板、背板）；近看會比較模糊。`);
+  const okMsg = L.own ? (L.empty ? '請先上傳你的設計。' : '已自動補好出血。請確認重要文字都在藍色虛線內，就可以下載印刷。') : '檢查通過：文字都在安全範圍內，可以下載印刷。';
+  for (const t of warns.length ? warns : [okMsg]) { const li = document.createElement('li'); li.textContent = t; if (!warns.length) li.className = 'ok'; ul.append(li); }
 }
 function drawOpts(c) {
   const host = $('#opts');
@@ -1107,7 +1201,7 @@ function drawOpts(c) {
     const o = state.opts[i];
     b.children[1].textContent = `建議 ${i + 1}：${TEMPLATES[o.template].n}`;
     b.children[2].textContent = `${PALETTES[o.palette].n}・${FONTS[o.font].n}${o.why ? '｜' + o.why : ''}`;
-    thumbTo(b.querySelector('canvas'), layout(state.spec, c, o), 104);
+    thumbTo(b.querySelector('canvas'), layout(state.spec, c, { ...o, adj: state.adj }), 104);
   });
 }
 let timer = 0, seq = 0;
@@ -1118,10 +1212,12 @@ async function refresh() {
   const text = FIELDS.map(k => c[k]).join('') + '0123456789';
   await Promise.all([...new Set([state.style.font, ...state.opts.map(o => o.font)])].map(fk => ensureFonts(fk, text)));
   if (my !== seq) return;
-  state.L = layout(state.spec, c, state.style);
+  const own = state.mode === 'own';
+  state.L = own ? layoutOwn(state.spec, state.design, { fit: state.fit, bg: state.dbg, focus: state.dfocus / 100 }) : layout(state.spec, c, { ...state.style, adj: state.adj });
   drawPreview(); showInfo(state.L);
   if (pdfCache && pdfCache.L !== state.L) { pdfCache = null; $('#share').textContent = SHARE_LABEL; }
-  document.querySelectorAll('.tgrid .thumb').forEach(b => thumbTo(b.querySelector('canvas'), layout(state.spec, c, { ...state.style, template: b.dataset.t }), 104));
+  if (own) { markPickers(); save(); return; }
+  document.querySelectorAll('.tgrid .thumb').forEach(b => thumbTo(b.querySelector('canvas'), layout(state.spec, c, { ...state.style, template: b.dataset.t, adj: state.adj }), 104));
   drawOpts(c); markPickers(); save();
 }
 
@@ -1155,13 +1251,13 @@ const CAN_SHARE = (() => { try { return !hasClaude && !IN_APP && !!navigator.can
 let pdfCache = null;
 if (CAN_SHARE) $('#share').hidden = false;
 const SAVE_MSG = { declined: '已取消下載。', host: '這個 App 不能存檔，請用瀏覽器或電腦開啟這個頁面再下載。', busy: '上一個下載視窗還開著，處理完再按一次。', unavailable: '這裡無法下載檔案，請改用瀏覽器開啟這個頁面。' };
-const fileBase = () => (content().brand || '文宣').replace(/[\\/:*?"<>|\s]+/g, '').slice(0, 30) || '文宣';
+const fileBase = () => (state.mode === 'own' && state.design ? state.design.name.replace(/\.[a-z0-9]+$/i, '') : content().brand || '文宣').replace(/[\\/:*?"<>|\s]+/g, '').slice(0, 30) || '文宣';
 const mb = n => (n / 1048576).toFixed(n > 1048576 * 10 ? 0 : 1) + ' MB';
 
 /* ===== 事件 ===== */
 function readSpec() {
   const w = parseFloat($('#w').value), h = parseFloat($('#h').value), b = parseFloat($('#bleed').value);
-  if (!(w >= 20 && w <= 2000 && h >= 20 && h <= 2000)) { $('#dlstat').textContent = '寬和高請填 20 到 2000 mm 之間的數字。'; return false; }
+  if (!(w >= 20 && w <= 5000 && h >= 20 && h <= 5000)) { $('#dlstat').textContent = '寬和高請填 20 到 5000 mm 之間的數字。'; return false; }
   $('#dlstat').textContent = '';
   Object.assign(state.spec, { w, h, bleed: Number.isFinite(b) ? clamp(b, 0, 10) : 3 });
   return true;
@@ -1180,6 +1276,7 @@ document.addEventListener('click', e => {
   else if (t.closest('.tgrid')) { state.style.template = t.dataset.t; schedule(); }
   else if (t.closest('#pals')) { state.style.palette = t.dataset.p; schedule(); }
   else if (t.closest('#fonts')) { state.style.font = t.dataset.f; schedule(); }
+  else if (t.closest('#a-align')) { state.adj.align = t.dataset.al; schedule(); }
   else if (t.closest('#opts')) { const o = state.opts[t.dataset.o]; if (o) { Object.assign(state.style, { template: o.template, palette: o.palette, font: o.font }); schedule(); } }
 });
 function loadImage(file) {
@@ -1258,7 +1355,7 @@ $('#pdf').addEventListener('click', async () => {
   const L = state.L, btn = $('#pdf'), st = $('#dlstat'); if (!L) return;
   btn.disabled = true;
   try {
-    const c = content(), title = c.brand || c.title.split('\n')[0] || '文宣';
+    const c = content(), title = state.mode === 'own' && state.design ? state.design.name : (c.brand || c.title.split('\n')[0] || '文宣');
     const r = await buildPDF(L, state.spec.marks, title, (i, n) => { st.textContent = `產生印刷檔中… ${Math.round(i / n * 100)}%`; });
     st.textContent = '檔案準備好了…';
     const name = `${fileBase()}_${state.spec.w}x${state.spec.h}mm_印刷用.pdf`;
@@ -1290,15 +1387,103 @@ $('#jpg').addEventListener('click', async () => {
   const L = state.L, st = $('#dlstat'); if (!L) return;
   try {
     const blob = await buildJPG(L);
-    const res = await saveFile(`${fileBase()}_確認用.jpg`, blob);
-    st.textContent = res === 'saved' ? '已產生確認用 JPG，可以先傳給顧客確認。' : SAVE_MSG[res];
+    const res = await saveFile(`${fileBase()}_${state.spec.w}x${state.spec.h}mm_成品圖.jpg`, blob);
+    st.textContent = IN_APP && IS_TOP ? '這個 App 的內建瀏覽器擋住了下載，請按最上方黃色區塊的「用瀏覽器開啟」再下載。' : res === 'saved' ? `已產生成品圖 JPG（${blob.dpi} dpi，裁切後的樣子，沒有白邊）。` : SAVE_MSG[res];
   } catch (e) { st.textContent = '產生圖片時出錯了，請再試一次。'; }
 });
+/* ===== 上傳我的設計 ===== */
+function setMode(m, quiet) {
+  state.mode = m;
+  $('#mode-auto').setAttribute('aria-selected', m === 'auto'); $('#mode-own').setAttribute('aria-selected', m === 'own');
+  $('#step-own').hidden = m !== 'own'; $('#step-content').hidden = m === 'own'; $('#step-layout').hidden = m === 'own';
+  $('#fitRatio').hidden = !(m === 'own' && state.design);
+  if (!quiet) schedule();
+}
+$('#mode-auto').addEventListener('click', () => setMode('auto'));
+$('#mode-own').addEventListener('click', () => setMode('own'));
+let pdfjsP = null;
+function loadPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return pdfjsP || (pdfjsP = new Promise((res, rej) => {
+    const base = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/', sc = document.createElement('script');
+    sc.src = base + 'pdf.min.js';
+    sc.onload = () => { try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js'; res(window.pdfjsLib); } catch (e) { rej(e); } };
+    sc.onerror = () => { pdfjsP = null; rej(new Error('pdfjs')); };
+    document.head.append(sc);
+  }));
+}
+function downsize(src, w, h) { const k = Math.min(1, 1600 / Math.max(w, h)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k)); c.getContext('2d').drawImage(src, 0, 0, c.width, c.height); return c; }
+function edgeColor(cv) {
+  try {
+    const ctx = cv.getContext('2d'), w = cv.width, h = cv.height, px = [];
+    for (const [x, y, ww, hh] of [[0, 0, w, 2], [0, h - 2, w, 2], [0, 0, 2, h], [w - 2, 0, 2, h]]) px.push(ctx.getImageData(x, y, ww, hh).data);
+    let r = 0, g = 0, b = 0, n = 0;
+    for (const d of px) for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
+    return '#' + [r, g, b].map(v => Math.round(v / n).toString(16).padStart(2, '0')).join('');
+  } catch (e) { return '#ffffff'; }
+}
+async function readDesign(file) {
+  if (/pdf$/i.test(file.type) || /\.pdf$/i.test(file.name)) {
+    const lib = await loadPdfJs(), doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise, page = await doc.getPage(1);
+    const v1 = page.getViewport({ scale: 1 }); let sc = 300 / 72; const px = v1.width * v1.height * sc * sc; if (px > 16e6) sc *= Math.sqrt(16e6 / px);
+    const vp = page.getViewport({ scale: sc }), cv = document.createElement('canvas'); cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+    const ctx = cv.getContext('2d'); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, cv.width, cv.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    return { img: cv, small: downsize(cv, cv.width, cv.height), w: cv.width, h: cv.height, name: file.name, mm: { w: Math.round(v1.width / PT * 10) / 10, h: Math.round(v1.height / PT * 10) / 10 }, pages: doc.numPages, url: cv.toDataURL('image/jpeg', 0.7) };
+  }
+  const im = await loadImage(file);
+  return { ...im, small: downsize(im.img, im.w, im.h), name: file.name };
+}
+$('#in-design').addEventListener('change', async e => {
+  const file = e.target.files && e.target.files[0], st = $('#designStat'), pic = $('#pic-design'); if (!file) return;
+  st.textContent = '讀取中…';
+  try {
+    const d = await readDesign(file);
+    if (state.design && state.design.url && state.design.url.startsWith('blob:')) URL.revokeObjectURL(state.design.url);
+    state.design = d; state.dbg = edgeColor(d.small); $('#dbg').value = state.dbg;
+    const el = document.createElement('img'); el.src = d.url; el.alt = '已上傳的設計'; pic.textContent = ''; pic.append(el);
+    const b = state.spec.bleed, msg = [`${d.name}：${d.w} × ${d.h} 像素`];
+    if (d.mm) {
+      msg.push(`PDF 頁面 ${d.mm.w} × ${d.mm.h} mm`);
+      if (Math.abs(d.mm.w - state.spec.w - 2 * b) < 1.5 && Math.abs(d.mm.h - state.spec.h - 2 * b) < 1.5) { state.fit = 'bleed'; msg.push('看起來已經含出血，已自動選好'); }
+      else if (Math.abs(d.mm.w - state.spec.w) < 1.5 && Math.abs(d.mm.h - state.spec.h) < 1.5) { state.fit = 'trim'; msg.push('剛好是成品尺寸，會自動補出血'); }
+      else msg.push('和目前的成品尺寸不同，可以按「照我的設計調整尺寸」');
+      if (d.pages > 1) msg.push(`共 ${d.pages} 頁，這裡只會用第 1 頁`);
+    }
+    st.textContent = msg.join('。') + '。';
+    document.querySelectorAll('input[name=fit]').forEach(r => { r.checked = r.value === state.fit; });
+    $('#dbgRow').hidden = state.fit !== 'contain'; $('#dfocusRow').hidden = false; $('#fitRatio').hidden = false;
+    schedule();
+  } catch (err) { st.textContent = /pdf/i.test(file.name) ? 'PDF 讀不出來，請改存成 JPG 或 PNG 再上傳。' : '這個檔案讀不出來，請換 JPG、PNG 或 PDF。'; }
+  e.target.value = '';
+});
+document.querySelectorAll('input[name=fit]').forEach(r => r.addEventListener('change', () => { state.fit = r.value; $('#dbgRow').hidden = state.fit !== 'contain'; schedule(); }));
+$('#dbg').addEventListener('input', e => { state.dbg = e.target.value; schedule(); });
+$('#dfocus').addEventListener('input', e => { state.dfocus = +e.target.value; schedule(); });
+$('#fitRatio').addEventListener('click', () => {
+  const d = state.design; if (!d) return;
+  const b = state.spec.bleed, r5 = v => Math.round(v * 2) / 2;
+  if (d.mm) { const k = state.fit === 'bleed' ? 2 * b : 0; state.spec.w = r5(d.mm.w - k); state.spec.h = r5(d.mm.h - k); }
+  else if (state.fit === 'bleed') state.spec.h = r5((state.spec.w + 2 * b) * d.h / d.w - 2 * b);
+  else state.spec.h = r5(state.spec.w * d.h / d.w);
+  state.spec.w = clamp(state.spec.w, 20, 5000); state.spec.h = clamp(state.spec.h, 20, 5000);
+  fillInputs(); schedule();
+});
+/* ===== 微調 ===== */
+for (const k of ['title', 'price', 'body', 'photo']) $('#a-' + k).addEventListener('input', e => { state.adj[k] = +e.target.value / 100; $('#o-' + k).textContent = e.target.value + '%'; schedule(); });
+$('#a-custom').addEventListener('change', e => {
+  state.adj.custom = e.target.checked; $('#colorRow').hidden = !e.target.checked;
+  if (e.target.checked && !state.adj.touched) { const P = PALETTES[state.style.palette] || PALETTES.sale; state.adj.p = P.p; state.adj.a = P.a; $('#a-p').value = P.p.toLowerCase(); $('#a-a').value = P.a.toLowerCase(); }
+  schedule();
+});
+$('#a-p').addEventListener('input', e => { state.adj.p = e.target.value; state.adj.touched = true; schedule(); });
+$('#a-a').addEventListener('input', e => { state.adj.a = e.target.value; state.adj.touched = true; schedule(); });
+$('#a-reset').addEventListener('click', () => { state.adj = { ...ADJ0 }; fillInputs(); schedule(); });
 new ResizeObserver(() => { if ($('#proof').clientWidth !== lastW) drawPreview(); }).observe($('#proof'));
 const fab = $('#fab');
 new IntersectionObserver(([en]) => { fab.hidden = en.isIntersecting; }, { threshold: 0.02 }).observe($('#panel'));
 buildPickers(); fillInputs(); refresh();
-window.yijian = { state, layout, content, buildPDF, buildJPG, refresh, em, TEMPLATES, PALETTES, FONTS };
+window.yijian = { state, layout, layoutOwn, content, buildPDF, buildJPG, refresh, em, setMode, TEMPLATES, PALETTES, FONTS };
 }
 </script>
 </body>
